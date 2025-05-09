@@ -1,55 +1,54 @@
-  name: CMake CI
+name: CMake CI
 
-  on:
-    push:
-      branches: [ "master" ]
-    pull_request:
-      branches: [ "master" ]
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
-  env:
-    BUILD_TYPE: Release
+env:
+  BUILD_TYPE: Release
 
-  jobs:
-    build:
-      runs-on: windows-latest
+jobs:
+  build:
+    runs-on: windows-latest
 
-      steps:
-        - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-        - name: Set up Visual Studio environment
-          uses: ilammy/msvc-dev-cmd@v1
-          with:
-            arch: x64
+      - name: Set up Visual Studio environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
-        - name: Set up vcpkg
-          run: |
-            git clone https://github.com/microsoft/vcpkg.git
-            cd vcpkg
-            git checkout 2025.02.14
-            .\bootstrap-vcpkg.bat -disableMetrics
-            .\vcpkg integrate install
-            dir .\scripts\buildsystems
-            cd ..
+      - name: Set up vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          cd vcpkg
+          git checkout 2025.02.14
+          .\bootstrap-vcpkg.bat -disableMetrics
+          .\vcpkg integrate install
+          dir .\scripts\buildsystems
+          cd ..
 
-        - name: Install dependencies
-          run: |
-            .\vcpkg\vcpkg install zeromq:x64-windows --recurse --debug || exit 1
-            .\vcpkg\vcpkg install boost-lockfree:x64-windows --recurse --debug || exit 1
-            .\vcpkg\vcpkg install spdlog:x64-windows --recurse --debug || exit 1
-            .\vcpkg\vcpkg install gtest:x64-windows --recurse --debug || exit 1
-            dir vcpkg\installed\x64-windows\lib
-            dir vcpkg\installed\x64-windows\include
-            dir vcpkg\installed\x64-windows\share\libzmq
+      - name: Install dependencies
+        run: |
+          .\vcpkg\vcpkg install zeromq:x64-windows --recurse --debug || exit 1
+          .\vcpkg\vcpkg install boost-lockfree:x64-windows --recurse --debug || exit 1
+          .\vcpkg\vcpkg install spdlog:x64-windows --recurse --debug || exit 1
+          .\vcpkg\vcpkg install gtest:x64-windows --recurse --debug || exit 1
+          dir vcpkg\installed\x64-windows\lib
+          dir vcpkg\installed\x64-windows\include
 
-        - name: Configure CMake
-          run: |
-            cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
 
-        - name: Build
-          run: |
-            cmake --build build --config ${{env.BUILD_TYPE}}
+      - name: Build
+        run: |
+          cmake --build build --config ${{env.BUILD_TYPE}}
 
-        - name: Test
-          working-directory: build
-          run: |
-            ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+      - name: Test
+        working-directory: build
+        run: |
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
