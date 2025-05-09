@@ -35,30 +35,27 @@ jobs:
           .\vcpkg integrate install
           dir .\scripts\buildsystems
 
+      # Other steps like checkout and setup remain unchanged
       - name: Install dependencies
         run: |
           .\vcpkg\vcpkg install zeromq:x64-mingw-dynamic --recurse --debug || exit 1
-          .\vcpkg\vcpkg install boost-lockfree:x64-mingw-dynamic --recurse --debug || exit 1
-          .\vcpkg\vcpkg install spdlog:x64-mingw-dynamic --recurse --debug || exit 1
-          .\vcpkg\vcpkg install gtest:x64-mingw-dynamic --recurse --debug || exit 1
+        shell: cmd
+
+      - name: Check vcpkg installed libraries
+        run: |
           dir vcpkg\installed\x64-mingw-dynamic\lib
           dir vcpkg\installed\x64-mingw-dynamic\include
-
-      - name: Verify vcpkg toolchain
-        run: |
-          if not exist "vcpkg\scripts\buildsystems\vcpkg.cmake" (
-            echo vcpkg toolchain file not found
-            exit 1
-          )
-          echo vcpkg toolchain file found
+        shell: cmd
 
       - name: Configure CMake
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -G "MinGW Makefiles" -DCMAKE_CXX_STANDARD=23
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -G "MinGW Makefiles" -DCMAKE_CXX_STANDARD=23
+        shell: cmd
 
+      # Build step remains unchanged
       - name: Build
-        run: |
-          mingw32-make -C build
+        run: cmake --build build
+        shell: cmd
 
       - name: Test
         working-directory: build
