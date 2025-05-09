@@ -8,6 +8,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
 jobs:
   build:
@@ -40,9 +41,21 @@ jobs:
           dir vcpkg\installed\x64-windows\lib
           dir vcpkg\installed\x64-windows\include
 
+      - name: Verify vcpkg toolchain
+        run: |
+          if not exist "vcpkg\scripts\buildsystems\vcpkg.cmake" (
+            echo vcpkg toolchain file not found
+            exit 1
+          )
+          echo vcpkg toolchain file found
+
+      - name: Debug CMake paths
+        run: |
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -LA | findstr "CMAKE_.*_PATH"
+
       - name: Configure CMake
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
 
       - name: Build
         run: |
