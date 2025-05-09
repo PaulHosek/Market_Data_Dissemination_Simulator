@@ -1,25 +1,60 @@
+name: CMake CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: cmd
     steps:
-      # Other steps like checkout and setup remain unchanged
+      - uses: actions/checkout@v4
+
+      - name: Install MinGW
+        run: |
+          choco install mingw -y
+          where gcc
+          where g++
+          where mingw32-make
+      - name: Set up vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          cd vcpkg
+          git checkout 2025.02.14
+          .\bootstrap-vcpkg.bat -disableMetrics
+          .\vcpkg integrate install
+          dir .\scripts\buildsystems
       - name: Install dependencies
         run: |
           .\vcpkg\vcpkg install zeromq:x64-mingw-dynamic --recurse --debug || exit 1
-        shell: cmd
-
-      - name: Check vcpkg installed libraries
-        run: |
+          .\vcpkg\vcpkg install boost-lockfree:x64-mingw-dynamic --recurse --debug || exit 1
+          .\vcpkg\vcpkg install spdlog:x64-mingw-dynamic --recurse --debug || exit 1
+          .\vcpkg\vcpkg install gtest:x64-mingw-dynamic --recurse --debug || exit 1
           dir vcpkg\installed\x64-mingw-dynamic\lib
           dir vcpkg\installed\x64-mingw-dynamic\include
-        shell: cmd
-
+      - name: Verify vcpkg toolchain
+        run: |
+          if not exist "vcpkg\scripts\buildsystems\vcpkg.cmake" (
+            echo vcpkg toolchain file not found
+            exit 1
+          )
+          echo vcpkg toolchain file found
       - name: Configure CMake
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -G "MinGW Makefiles" -DCMAKE_CXX_STANDARD=23
-        shell: cmd
-
-      # Build step remains unchanged
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -G "MinGW Makefiles" -DCMAKE_CXX_STANDARD=23
       - name: Build
-        run: cmake --build build
-        shell: cmd
+        run: |
+          mingw32-make -C build
+      - name: Test
+        working-directory: build
+        run: |
+          ctest -C %BUILD_TYPE% --output-on-failure
