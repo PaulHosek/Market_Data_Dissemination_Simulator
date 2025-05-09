@@ -1,43 +1,53 @@
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  name: CMake CI
 
-env:
-  BUILD_TYPE: Release
+  on:
+    push:
+      branches: [ "master" ]
+    pull_request:
+      branches: [ "master" ]
 
-jobs:
-  build:
-    runs-on: windows-latest
+  env:
+    BUILD_TYPE: Release
 
-    steps:
-      - uses: actions/checkout@v4
+  jobs:
+    build:
+      runs-on: windows-latest
 
-      - name: Set up vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-          .\vcpkg\vcpkg integrate install
-          dir vcpkg\scripts\buildsystems
+      steps:
+        - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          .\vcpkg\vcpkg install zeromq:x64-windows boost-lockfree:x64-windows spdlog:x64-windows gtest:x64-windows
-          dir vcpkg\installed\x64-windows\lib
-          dir vcpkg\installed\x64-windows\include
+        - name: Cache vcpkg dependencies
+          id: cache-vcpkg
+          uses: actions/cache@v4
+          with:
+            path: vcpkg/installed
+            key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-2025-05
+            restore-keys: |
+              vcpkg-${{ runner.os }}-
 
+        - name: Set up vcpkg
+          run: |
+            git clone https://github.com/microsoft/vcpkg.git
+            .\vcpkg\bootstrap-vcpkg.bat
+            .\vcpkg\vcpkg integrate install
+            dir vcpkg\scripts\buildsystems
 
+        - name: Install dependencies
+          run: |
+            .\vcpkg\vcpkg install zeromq:x64-windows boost-lockfree:x64-windows spdlog:x64-windows gtest:x64-windows --recurse --verbose
+            dir vcpkg\installed\x64-windows\lib
+            dir vcpkg\installed\x64-windows\include
+            dir vcpkg\installed\x64-windows\share\libzmq
 
-      - name: Configure CMake
-        run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
+        - name: Configure CMake
+          run: |
+            cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
 
-      - name: Build
-        run: |
-          cmake --build build --config ${{env.BUILD_TYPE}}
+        - name: Build
+          run: |
+            cmake --build build --config ${{env.BUILD_TYPE}}
 
-      - name: Test
-        working-directory: build
-        run: |
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure"
+        - name: Test
+          working-directory: build
+          run: |
+            ctest -C ${{env.BUILD_TYPE}} --output-on-failure

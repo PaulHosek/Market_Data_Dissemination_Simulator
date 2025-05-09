@@ -22,7 +22,7 @@ if(POLICY CMP0167)
 endif()
 
 # Find dependencies
-find_package(libzmq REQUIRED) # Use libzmq instead of ZeroMQ
+find_package(libzmq REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS lockfree)
