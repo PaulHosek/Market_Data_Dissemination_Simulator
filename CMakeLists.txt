@@ -22,7 +22,18 @@ if(POLICY CMP0167)
 endif()
 
 # Find dependencies
-find_package(libzmq REQUIRED)
+find_package(libzmq CONFIG QUIET)
+if(NOT libzmq_FOUND)
+    message(WARNING "libzmq not found via find_package, attempting fallback")
+    find_library(libzmq_LIBRARY NAMES libzmq zmq PATHS "${CMAKE_SOURCE_DIR}/vcpkg/installed/x64-windows/lib")
+    find_path(libzmq_INCLUDE_DIR NAMES zmq.h PATHS "${CMAKE_SOURCE_DIR}/vcpkg/installed/x64-windows/include")
+    if(libzmq_LIBRARY AND libzmq_INCLUDE_DIR)
+        message(STATUS "libzmq found via fallback: ${libzmq_LIBRARY}")
+        set(libzmq_FOUND TRUE)
+    else()
+        message(FATAL_ERROR "libzmq not found")
+    endif()
+endif()
 find_package(spdlog REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS lockfree)
@@ -42,7 +53,7 @@ add_executable(simulator src/main.cpp)
 target_include_directories(simulator PRIVATE include ${libzmq_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 
 # Link libraries
-target_link_libraries(simulator PRIVATE libzmq spdlog::spdlog GTest::gtest)
+target_link_libraries(simulator PRIVATE ${libzmq_LIBRARY} spdlog::spdlog GTest::gtest)
 
 # Compiler flags for warnings
 if(MSVC)
@@ -54,7 +65,7 @@ endif()
 # Add test executable
 add_executable(unit_tests tests/test_basic.cpp)
 target_include_directories(unit_tests PRIVATE include ${libzmq_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
-target_link_libraries(unit_tests PRIVATE libzmq spdlog::spdlog GTest::gtest GTest::gtest_main)
+target_link_libraries(unit_tests PRIVATE ${libzmq_LIBRARY} spdlog::spdlog GTest::gtest GTest::gtest_main)
 add_test(NAME UnitTests COMMAND unit_tests)
 
 # Enable testing

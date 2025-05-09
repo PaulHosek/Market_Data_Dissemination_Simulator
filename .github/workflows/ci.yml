@@ -16,25 +16,27 @@
       steps:
         - uses: actions/checkout@v4
 
-        - name: Cache vcpkg dependencies
-          id: cache-vcpkg
-          uses: actions/cache@v4
+        - name: Set up Visual Studio environment
+          uses: ilammy/msvc-dev-cmd@v1
           with:
-            path: vcpkg/installed
-            key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-2025-05
-            restore-keys: |
-              vcpkg-${{ runner.os }}-
+            arch: x64
 
         - name: Set up vcpkg
           run: |
             git clone https://github.com/microsoft/vcpkg.git
-            .\vcpkg\bootstrap-vcpkg.bat
-            .\vcpkg\vcpkg integrate install
-            dir vcpkg\scripts\buildsystems
+            cd vcpkg
+            git checkout 2025.02.14
+            .\bootstrap-vcpkg.bat -disableMetrics
+            .\vcpkg integrate install
+            dir .\scripts\buildsystems
+            cd ..
 
         - name: Install dependencies
           run: |
-            .\vcpkg\vcpkg install zeromq:x64-windows boost-lockfree:x64-windows spdlog:x64-windows gtest:x64-windows --recurse --verbose
+            .\vcpkg\vcpkg install zeromq:x64-windows --recurse --debug || exit 1
+            .\vcpkg\vcpkg install boost-lockfree:x64-windows --recurse --debug || exit 1
+            .\vcpkg\vcpkg install spdlog:x64-windows --recurse --debug || exit 1
+            .\vcpkg\vcpkg install gtest:x64-windows --recurse --debug || exit 1
             dir vcpkg\installed\x64-windows\lib
             dir vcpkg\installed\x64-windows\include
             dir vcpkg\installed\x64-windows\share\libzmq
