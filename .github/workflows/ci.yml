@@ -8,60 +8,96 @@ on:
 
 env:
   BUILD_TYPE: Release
-  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+  # VCPKG_ROOT will be ${{ github.workspace }}/vcpkg
+  # Define your target triplet once and reuse it
+  VCPKG_TRIPLET: x64-mingw-dynamic
+  # IMPORTANT: Replace 'YYYY.MM.DD' with an actual, valid vcpkg tag or commit hash
+  VCPKG_COMMIT_OR_TAG: 2024.02.14 # Example: Use a valid recent tag
 
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh # Use PowerShell for all run steps by default
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Visual Studio environment
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          arch: x64
+          submodules: true # If you ever add vcpkg as a submodule, for example
+
+      - name: Install MinGW-w64
+        run: |
+          choco install mingw --version 13.2.0 # Example: pin a version for consistency
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\MinGW\mingw64\bin"
+          g++ --version
+          gcc --version
+
+      - name: Set VCPKG_ROOT environment variable
+        run: echo "VCPKG_ROOT=${{ github.workspace }}/vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Cache vcpkg
+        id: cache-vcpkg
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg
+          key: ${{ runner.os }}-${{ env.VCPKG_TRIPLET }}-${{ env.VCPKG_COMMIT_OR_TAG }}-${{ hashFiles('**/CMakeLists.txt') }} # Key includes triplet and commit
 
       - name: Set up vcpkg
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true' # Run only if cache not found
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          cd vcpkg
-          git checkout 2025.02.14
+          Write-Host "Cloning vcpkg repository..."
+          git clone https://github.com/microsoft/vcpkg.git ${{ env.VCPKG_ROOT }}
+          Push-Location ${{ env.VCPKG_ROOT }}
+          Write-Host "Checking out vcpkg version: ${{ env.VCPKG_COMMIT_OR_TAG }}"
+          git checkout ${{ env.VCPKG_COMMIT_OR_TAG }}
+          Write-Host "Bootstrapping vcpkg..."
           .\bootstrap-vcpkg.bat -disableMetrics
-          .\vcpkg integrate install
-          dir .\scripts\buildsystems
-          cd ..
+          # .\vcpkg integrate install # Not strictly necessary if CMAKE_TOOLCHAIN_FILE is used explicitly
+          Pop-Location
+        shell: cmd # Bootstrap script is a .bat file
 
-      - name: Install dependencies
+      - name: Install dependencies using vcpkg
         run: |
-          .\vcpkg\vcpkg install zeromq:x64-windows --recurse --debug || exit 1
-          .\vcpkg\vcpkg install boost-lockfree:x64-windows --recurse --debug || exit 1
-          .\vcpkg\vcpkg install spdlog:x64-windows --recurse --debug || exit 1
-          .\vcpkg\vcpkg install gtest:x64-windows --recurse --debug || exit 1
-          dir vcpkg\installed\x64-windows\lib
-          dir vcpkg\installed\x64-windows\include
+          $VCPKG_EXECUTABLE = "${{ env.VCPKG_ROOT }}/vcpkg.exe"
+          Write-Host "Vcpkg executable: $VCPKG_EXECUTABLE"
+          Write-Host "Installing dependencies for triplet: ${{ env.VCPKG_TRIPLET }}"
+          & $VCPKG_EXECUTABLE install zeromq:${{ env.VCPKG_TRIPLET }} --recurse
+          & $VCPKG_EXECUTABLE install boost-lockfree:${{ env.VCPKG_TRIPLET }} --recurse
+          & $VCPKG_EXECUTABLE install spdlog:${{ env.VCPKG_TRIPLET }} --recurse
+          & $VCPKG_EXECUTABLE install gtest:${{ env.VCPKG_TRIPLET }} --recurse
+          Write-Host "Listing installed libraries for ${{env.VCPKG_TRIPLET}}:"
+          Get-ChildItem -Path "${{env.VCPKG_ROOT}}/installed/${{env.VCPKG_TRIPLET}}/lib" -ErrorAction SilentlyContinue
+          Write-Host "Listing installed includes for ${{env.VCPKG_TRIPLET}}:"
+          Get-ChildItem -Path "${{env.VCPKG_ROOT}}/installed/${{env.VCPKG_TRIPLET}}/include" -ErrorAction SilentlyContinue
 
-      - name: Verify vcpkg toolchain
+      - name: Verify vcpkg toolchain file
         run: |
-          if not exist "vcpkg\scripts\buildsystems\vcpkg.cmake" (
-            echo vcpkg toolchain file not found
+          $toolchain_file = "${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+          Write-Host "Looking for toolchain file at: $toolchain_file"
+          if (-not (Test-Path $toolchain_file)) {
+            Write-Error "vcpkg toolchain file NOT FOUND at $toolchain_file"
+            Write-Host "Contents of ${{ env.VCPKG_ROOT }}/scripts/buildsystems/:"
+            Get-ChildItem -Path "${{ env.VCPKG_ROOT }}/scripts/buildsystems/" -Recurse -Force -ErrorAction SilentlyContinue
             exit 1
-          )
-          echo vcpkg toolchain file found
-
-      - name: Debug CMake paths
-        run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -LA | findstr "CMAKE_.*_PATH"
+          }
+          Write-Host "vcpkg toolchain file found."
 
       - name: Configure CMake
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_STANDARD=23 -A x64
+          cmake -B build -S . `
+            -G "MinGW Makefiles" `
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+            -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake `
+            -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} `
+            -DCMAKE_CXX_STANDARD=23
 
-      - name: Build
+      - name: Build project
         run: |
-          cmake --build build --config ${{env.BUILD_TYPE}}
+          cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
 
-      - name: Test
-        working-directory: build
+      - name: Run tests
+        working-directory: ${{ github.workspace }}/build
         run: |
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+          ctest -C ${{ env.BUILD_TYPE }} --output-on-failure --verbose
