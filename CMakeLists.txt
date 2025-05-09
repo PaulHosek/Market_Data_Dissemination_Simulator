@@ -1,14 +1,3 @@
-#cmake_minimum_required(VERSION 3.31)
-#project(Market_Data_Dissemination)
-#
-#set(CMAKE_CXX_STANDARD 23)
-#set(CMAKE_TOOLCHAIN_FILE "C:/Users/paul/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
-##C:\Users\paul\.vcpkg-clion\vcpkg
-#add_executable(Market_Data_Dissemination src/main.cpp
-#        tests/test_basic.cpp)
-#target_link_libraries(unit_tests PRIVATE GTEST::gtest GTEST::gtest_main)
-#add_test(NAME UnitTests COMMAND unit_tests)
-
 cmake_minimum_required(VERSION 3.22)
 project(MarketDataSimulator LANGUAGES CXX)
 
@@ -20,6 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Ensure vcpkg toolchain is used
 if(DEFINED ENV{VCPKG_ROOT})
     set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 endif()
 
 # Set policy CMP0167 to NEW to avoid FindBoost warning
@@ -31,21 +22,19 @@ endif()
 find_package(ZeroMQ REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(GTest CONFIG REQUIRED)
-#find_package(Boost REQUIRED) # Header-only, no COMPONENTS needed
-# Replace find_package(Boost REQUIRED) with manual include path
-set(BOOST_ROOT "C:/Users/paul/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic")
-include_directories(${BOOST_ROOT}/include)
+find_package(Boost REQUIRED COMPONENTS lockfree)
 
-# Debug output for ZeroMQ
+# Debug output for dependencies
 message(STATUS "ZeroMQ found: ${ZeroMQ_FOUND}")
 message(STATUS "ZeroMQ include dir: ${ZeroMQ_INCLUDE_DIR}")
 message(STATUS "ZeroMQ library: ${ZeroMQ_LIBRARY}")
+message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
 
 # Add source files
 add_executable(simulator src/main.cpp)
 
 # Include directories
-target_include_directories(simulator PRIVATE include ${Boost_INCLUDE_DIRS} ${ZeroMQ_INCLUDE_DIR})
+target_include_directories(simulator PRIVATE include ${ZeroMQ_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 
 # Link libraries
 target_link_libraries(simulator PRIVATE ${ZeroMQ_LIBRARY} spdlog::spdlog GTest::gtest)
@@ -59,7 +48,8 @@ endif()
 
 # Add test executable
 add_executable(unit_tests tests/test_basic.cpp)
-target_link_libraries(unit_tests PRIVATE GTest::gtest GTest::gtest_main)
+target_include_directories(unit_tests PRIVATE include ${ZeroMQ_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+target_link_libraries(unit_tests PRIVATE ${ZeroMQ_LIBRARY} spdlog::spdlog GTest::gtest GTest::gtest_main)
 add_test(NAME UnitTests COMMAND unit_tests)
 
 # Enable testing
