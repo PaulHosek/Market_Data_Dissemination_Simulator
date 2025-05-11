@@ -4,11 +4,12 @@
 
 #ifndef MARKETDATAGENERATOR_H
 #define MARKETDATAGENERATOR_H
+
 #include <filesystem>
+#include <string>
+#include <vector>
 
 #include "IGenerator.h"
-#include <vector>
-#include <string>
 
 
 class MarketDataGenerator : public IGenerator{
