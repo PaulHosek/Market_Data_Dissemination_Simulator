@@ -48,7 +48,11 @@ message(STATUS "spdlog found: ${spdlog_FOUND}")
 message(STATUS "GTest found: ${GTest_FOUND}")
 
 # Add source files
-add_executable(simulator src/main.cpp)
+add_executable(simulator src/main.cpp
+        src/generator/IGenerator.h
+        src/generator/MarketDataGenerator.cpp
+        src/generator/MarketDataGenerator.h
+)
 
 # Include directories
 target_include_directories(simulator PRIVATE include ${libzmq_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
@@ -64,7 +68,8 @@ else()
 endif()
 
 # Add test executable
-add_executable(unit_tests tests/test_basic.cpp)
+add_executable(unit_tests tests/test_basic.cpp
+        src/generator/IGenerator.h)
 target_include_directories(unit_tests PRIVATE include ${libzmq_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 target_link_libraries(unit_tests PRIVATE ${libzmq_LIBRARY} spdlog::spdlog GTest::gtest GTest::gtest_main)
 add_test(NAME UnitTests COMMAND unit_tests)
