@@ -7,8 +7,14 @@
 #include <fstream>
 
 
+MarketDataGenerator::MarketDataGenerator(const uint32_t messages_per_second,std::filesystem::path symbols_file)
+    :symbols_{read_symbols_file(symbols_file)},
 
-void MarketDataGenerator::setup(uint32_t message_per_sec) {}
+    message_per_sec_{messages_per_second},
+    rng_(std::random_device{}()),
+    interval_(0)
+{}
+
 
 
 /**
