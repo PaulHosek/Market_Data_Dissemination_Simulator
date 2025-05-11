@@ -75,4 +75,4 @@ A high-performance C++23 app to simulate low-latency market data feeds for high-
 - `src/`: Main code (e.g., `main.cpp`).
 - `include/`: Header files.
 - `tests/`: Unit tests (`test_basic.cpp`).
-- `docs/`: Design docs (coming soon).
+- `docs/`: Design docs.
