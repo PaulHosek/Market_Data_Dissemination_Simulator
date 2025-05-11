@@ -10,13 +10,7 @@ void MarketDataGenerator::MarketDataGenerator() {
 
 }
 
-void MarketDataGenerator::setup(uint32_t message_per_sec) {
-    // read symbols file
-
-    this->message_per_sec = message_per_sec;
-    // set messages per second
-
-}
+void MarketDataGenerator::setup(uint32_t message_per_sec) {}
 
 
 /**
@@ -29,7 +23,7 @@ void MarketDataGenerator::setup(uint32_t message_per_sec) {
  * Note: This implementation uses std::ifstream for file reading.
  * Using a memory-mapped file (MMF) is an alternative approach for large files.
  */
-std::vector<std::string> MarketDataGenerator::read_symbols_file(std::string const& filename) {
+std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem::path const& filename) {
     std::vector<std::string> tickers;
     std::ifstream file(filename);
     std::string str;
