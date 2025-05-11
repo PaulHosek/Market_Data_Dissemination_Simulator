@@ -39,7 +39,9 @@ enable_testing()
 add_executable(generator_tests
         tests/test_sanity_basic.cpp
         src/generator/MarketDataGenerator.cpp
-#        src/types.h
+        tests/test_generator.cpp
+        src/generator/types.h
+        #        src/types.h
 )
 
 target_link_libraries(generator_tests
