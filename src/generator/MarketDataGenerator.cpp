@@ -7,6 +7,7 @@
 #include <fstream>
 
 
+
 void MarketDataGenerator::setup(uint32_t message_per_sec) {}
 
 
