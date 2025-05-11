@@ -7,7 +7,7 @@
 
 class IGenerator {
 public:
-    virtual void ~IGenerator() = default;
+    virtual ~IGenerator() = default;
     virtual void setup(uint32_t messages_per_sec) = 0;
     virtual void start() = 0;
     virtual void stop() = 0;
