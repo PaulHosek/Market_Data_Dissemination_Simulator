@@ -1,16 +1,17 @@
 
 // Created by paul on 30/04/2025.
 //
+#include <fstream>
 #include <gtest/gtest.h>
 
 
-#include "generator/MarketDataGenerator.h"
+#include "../src/generator/MarketDataGenerator.h"
 // #include "MarketDataGenerator.h"
 
 
 class MarketDataGeneratorTest : public ::testing::Test {
 protected:
-    std::filesysetm::path test_file_path = "test_tickers.txt";
+    std::filesystem::path test_file_path = "test_tickers.txt";
     void create_test_tickers_file() {
         std::ofstream file(test_file_path);
         file << "APPL\n";
