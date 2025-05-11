@@ -2,11 +2,11 @@
 
 [![CMake CI](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml)
 
-A high-performance C++23 app to simulate low-latency market data feeds for high-frequency trading.
+A high-performance C++23 app to simulate low-latency market data feeds.
 
 ## Build Instructions
 ### Prerequisites
-- CMake 3.22 or higher
+- CMake 3.31 or higher
 - MinGW-w64 (g++ with C++23 support)
 - vcpkg for managing dependencies
 - Libraries: ZeroMQ, Boost.Lockfree, spdlog, Google Test

@@ -37,7 +37,7 @@ target_link_libraries(main_simulate
 enable_testing()
 
 add_executable(generator_tests
-        tests/test_sanity_basic_test.cpp
+        tests/test_sanity_basic.cpp
         src/generator/MarketDataGenerator.cpp
 #        src/types.h
 )
