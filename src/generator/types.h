@@ -34,6 +34,9 @@ struct alignas(32) Trade {
     };
 };
 
+using QueueType_Quote = boost::lockfree::spsc_queue<Quote, boost::lockfree::capacity<10'000>>;
+using QueueType_Trade = boost::lockfree::spsc_queue<Trade, boost::lockfree::capacity<10'000>>;
+
 
 
 

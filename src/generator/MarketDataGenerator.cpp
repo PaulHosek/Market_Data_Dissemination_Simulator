@@ -5,15 +5,24 @@
 #include "MarketDataGenerator.h"
 
 #include <fstream>
+#include "spdlog/spdlog.h";
 
-
-MarketDataGenerator::MarketDataGenerator(const uint32_t messages_per_second,std::filesystem::path symbols_file)
-    :symbols_{read_symbols_file(symbols_file)},
-
-    message_per_sec_{messages_per_second},
+MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_Trade trade_queue)
+    :messages_per_sec_(0),
     rng_(std::random_device{}()),
-    interval_(0)
+    interval_(0),
+    quote_queue_(quote_queue),
+    trade_queue_(trade_queue),
+    running_(false)
 {}
+
+void MarketDataGenerator::configure(const uint32_t messages_per_second, const std::filesystem::path &symbols_file) {
+    messages_per_sec_ = messages_per_second;
+    symbols_ = read_symbols_file(symbols_file);
+    interval_ = std::chrono::nanoseconds(1'000'000 / messages_per_sec_);
+    current_prices_.resize(symbols_.size());
+    spdlog::info("Configuration complete");
+}
 
 
 
