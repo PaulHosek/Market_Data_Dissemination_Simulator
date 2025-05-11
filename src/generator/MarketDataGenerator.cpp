@@ -21,8 +21,9 @@ void MarketDataGenerator::configure(const uint32_t messages_per_second, const st
     symbols_ = read_symbols_file(symbols_file);
     interval_ = std::chrono::nanoseconds(1'000'000 / messages_per_sec_);
     current_prices_.resize(symbols_.size());
-    spdlog::info("Configuration complete");
+    spdlog::info("Generator configuration complete: {} messages/sec, {} symbols", messages_per_second, symbols_.size());
 }
+
 
 
 
