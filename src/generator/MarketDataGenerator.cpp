@@ -73,7 +73,6 @@ Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
 }
 
 Trade MarketDataGenerator::generate_trade(std::string const &symbol) {
-    // TODO this is inefficient, but let's see if it makes a difference when we are done
     // TODO the distribution properties as well as bid-ask-spread are fixed for now
     const std::size_t idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
     std::normal_distribution<double> price_step(0.0, 0.05); // narrower than quotes

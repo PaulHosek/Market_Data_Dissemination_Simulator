@@ -39,6 +39,9 @@ public:
 
 
 private:
+
+    // TODO using a vector makes search inefficient, but let's see if it makes a difference when we are done
+    // since its strings, they should be on the heap anyways so we just need a pointer-stable structure here
     std::vector<std::string> symbols_;
     uint32_t messages_per_sec_;
     std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set
