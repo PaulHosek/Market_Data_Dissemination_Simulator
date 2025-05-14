@@ -60,12 +60,12 @@ Quote MarketDataGenerator::generate_quote(std::string const& symbol) {
 
     current_prices_[idx] += price_step(rng_);
     const double price{current_prices_[idx]};
-    const double spread{price * 0.001}; // 1%
+    const double bid_ask_spread{price * 0.001}; // 1%
 
     Quote next_quote{};
     std::strncpy(next_quote.symbol, symbol.c_str(), sizeof(next_quote.symbol) -1);
-    next_quote.bid_price = price - spread / 2;
-    next_quote.ask_price = price + spread / 2;
+    next_quote.bid_price = price -  bid_ask_spread / 2;
+    next_quote.ask_price = price +  bid_ask_spread / 2;
     next_quote.bid_size =  quote_size(rng_);
     next_quote.ask_size =  quote_size(rng_);
     next_quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
