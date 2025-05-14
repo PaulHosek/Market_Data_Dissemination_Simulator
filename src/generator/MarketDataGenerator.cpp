@@ -27,6 +27,15 @@ void MarketDataGenerator::configure(const uint32_t messages_per_second, const st
     spdlog::info("Generator configuration complete: {} messages/sec, {} symbols", messages_per_second, symbols_.size());
 }
 
+void MarketDataGenerator::start() {
+    if (messages_per_sec_ == 0 || symbols_.empty()) {
+        throw std::logic_error("Generator has not been configured. Call configure first.");
+    }
+
+    // FIXME integrate jthreads & stop tokens properly, find a better way to yield than yield
+    std::jthread generating_thread{running2_, generationLoop()};
+}
+
 
 /**
  * Reads a list of stock tickers from a file.

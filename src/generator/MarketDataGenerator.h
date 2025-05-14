@@ -28,7 +28,7 @@ public:
     //1. Test if configuration happened (correctly)
     //2. set running to true
     //3. push generation loop to the generator thread
-    // void start() override;
+    void start() override;
 
     // TODO:
     // set running to false
@@ -49,6 +49,7 @@ private:
     QueueType_Trade& trade_queue_;
     uint32_t seed_; // TODO add to the logic, not used for now
     std::atomic<bool> running_;
+    std::stop_token running2_;
     std::vector<double> current_prices_;
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
 
