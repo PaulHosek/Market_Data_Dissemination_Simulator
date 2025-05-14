@@ -5,7 +5,7 @@
 #include "MarketDataGenerator.h"
 
 #include <fstream>
-#include "spdlog/spdlog.h";
+#include "spdlog/spdlog.h"
 
 MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_Trade trade_queue)
     :messages_per_sec_(0),
@@ -67,7 +67,7 @@ Quote MarketDataGenerator::generate_quote(std::string const& symbol) {
     next_quote.ask_price = price + bid_ask_spread / 2;
     next_quote.bid_size =  quote_size(rng_);
     next_quote.ask_size =  quote_size(rng_);
-    next_quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    next_quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     return next_quote;
 }

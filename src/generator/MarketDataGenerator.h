@@ -23,19 +23,19 @@ public:
 
 
     MarketDataGenerator(QueueType_Quote quote_queue, QueueType_Trade trade_queue);
-    void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file, const seed) override;
+    void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file, const uint32_t seed) override;
 
     //TODO:
     //1. Test if configuration happened (correctly)
     //2. set running to true
     //3. push generation loop to the generator thread
-    void start();
+    // void start() override;
 
     // TODO:
     // set running to false
     // join the generator thread if joinable
     // TODO maybe want to think about coroutines here for the stop and go & since they should be more lightweight than threads
-    void stop() override;
+    // void stop() override;
 
 
 private:
@@ -68,7 +68,7 @@ private:
     // TODO:
     // same thing as the trade but now a quote, generation step very similar(different distribution for volumne vs size
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
-    Trade generate_trade(std::string cosnt&);
+    Trade generate_trade(std::string const&);
 
 };
 
