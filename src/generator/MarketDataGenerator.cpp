@@ -23,7 +23,7 @@ void MarketDataGenerator::configure(const uint32_t messages_per_second, const st
     seed_ = seed;
     symbols_ = read_symbols_file(symbols_file);
     interval_ = std::chrono::nanoseconds(1'000'000 / messages_per_sec_);
-    current_prices_.resize(symbols_.size());
+    current_prices_.resize(symbols_.size(), 100); // initial symbol price
     spdlog::info("Generator configuration complete: {} messages/sec, {} symbols", messages_per_second, symbols_.size());
 }
 
@@ -50,6 +50,13 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
     return tickers;
 }
 
+
+
+/**
+ * Generates a quote struct and fills it with values matching the random walk of a symbol.
+ * Symbols are all initialised at 100 for now
+ *
+ ***/
 Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
     // TODO cannot use string view here because of strncpy
     const std::size_t idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
