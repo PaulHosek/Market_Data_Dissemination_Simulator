@@ -11,13 +11,15 @@ MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_
     :messages_per_sec_(0),
     rng_(std::random_device{}()),
     interval_(0),
+    seed_{},
     quote_queue_(quote_queue),
     trade_queue_(trade_queue),
     running_(false)
 {}
 
-void MarketDataGenerator::configure(const uint32_t messages_per_second, const std::filesystem::path &symbols_file) {
+void MarketDataGenerator::configure(const uint32_t messages_per_second, const std::filesystem::path &symbols_file, const uint32_t seed) {
     messages_per_sec_ = messages_per_second;
+    seed_ = seed;
     symbols_ = read_symbols_file(symbols_file);
     interval_ = std::chrono::nanoseconds(1'000'000 / messages_per_sec_);
     current_prices_.resize(symbols_.size());
@@ -48,3 +50,49 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
     }
     return tickers;
 }
+
+Quote MarketDataGenerator::generate_quote(std::string const& symbol) {
+    // TODO cannot use string view here because of strncpy
+    std::size_t idx = std::distance(symbols_.begin(), std::find(symbols_.begin(), symbols_.end(), symbol));
+    std::normal_distribution<double>  price_step_dist(0.0, 0.1);
+    std::uniform_int_distribution<>   quote_size_dist(50, 500);
+
+
+    current_prices_[idx] += price_step_dist(rng_);
+    double price{current_prices_[idx]};
+    double spread{price * 0.001}; // 1%
+
+    Quote next_quote{};
+    std::strncpy(next_quote.symbol, symbol.c_str(), sizeof(next_quote.symbol) -1);
+    next_quote.bid_price = price - spread / 2;
+    next_quote.ask_price = price + spread / 2;
+    next_quote.bid_size =  quote_size_dist(rng_); // TODO need to change this repeated calling if use seeds
+    next_quote.ask_size =  quote_size_dist(rng_);
+    quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+
+    return next_quote;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

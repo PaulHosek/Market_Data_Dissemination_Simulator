@@ -23,7 +23,7 @@ public:
 
 
     MarketDataGenerator(QueueType_Quote quote_queue, QueueType_Trade trade_queue);
-    void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file) override;
+    void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file, const seed) override;
 
     //TODO:
     //1. Test if configuration happened (correctly)
@@ -45,8 +45,9 @@ private:
     std::chrono::nanoseconds interval_;
     QueueType_Quote& quote_queue_;
     QueueType_Trade& trade_queue_;
+    uint32_t seed_; // TODO add to the logic, not used for now
     std::atomic<bool> running_;
-    std::vector<std::int64_t> current_prices_;
+    std::vector<double> current_prices_;
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
 
     //TODO: -> maybe make this private as well as the called methods
@@ -62,12 +63,12 @@ private:
     // random walk the price with the price change + some fixed volatility -> can make this more complex later
     // (modularity makes it easy to replace this method) -> could make it an interface if I am interested in different generation methods
     // create a new quote struct and fill it with the generated information & current time
-    Quote generate_quote(std::string_view symbol);
+    Quote generate_quote(std::string const&);
 
     // TODO:
     // same thing as the trade but now a quote, generation step very similar(different distribution for volumne vs size
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
-    Trade generate_trade(std::string_view symbol);
+    Trade generate_trade(std::string cosnt&);
 
 };
 
