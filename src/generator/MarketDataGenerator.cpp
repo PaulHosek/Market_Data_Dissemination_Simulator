@@ -52,14 +52,19 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
 
 
 
+//
+// void MarketDataGenerator::generation_loop() {
+//
+// }
+
+
 /**
  * Generates a quote struct and fills it with values matching the random walk of a symbol.
  * Symbols are all initialised at 100 for now
- *
  ***/
 Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
     // TODO cannot use string view here because of strncpy
-    const std::size_t idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
+    const auto idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
     std::normal_distribution<double> price_step(0.0, 0.1);
     std::uniform_int_distribution<uint32_t> quote_size(50, 500);
 
@@ -81,7 +86,7 @@ Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
 
 Trade MarketDataGenerator::generate_trade(std::string const &symbol) {
     // TODO the distribution properties as well as bid-ask-spread are fixed for now
-    const std::size_t idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
+    const auto idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
     std::normal_distribution<double> price_step(0.0, 0.05); // narrower than quotes
     std::uniform_int_distribution<uint32_t> trade_size(10, 100);
 
