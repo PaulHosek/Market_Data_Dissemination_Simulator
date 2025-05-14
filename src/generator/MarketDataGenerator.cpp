@@ -53,7 +53,7 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
 
 Quote MarketDataGenerator::generate_quote(std::string const& symbol) {
     // TODO cannot use string view here because of strncpy
-    std::size_t idx = std::distance(symbols_.begin(), std::find(symbols_.begin(), symbols_.end(), symbol));
+    std:;size_t idx = std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol));
     std::normal_distribution<double>  price_step_dist(0.0, 0.1);
     std::uniform_int_distribution<>   quote_size_dist(50, 500);
 
