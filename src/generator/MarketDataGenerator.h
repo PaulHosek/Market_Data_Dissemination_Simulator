@@ -41,7 +41,7 @@ public:
 private:
     std::vector<std::string> symbols_;
     uint32_t messages_per_sec_;
-    std::mt19937 rng_;
+    std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set
     std::chrono::nanoseconds interval_;
     QueueType_Quote& quote_queue_;
     QueueType_Trade& trade_queue_;
@@ -50,7 +50,7 @@ private:
     std::vector<double> current_prices_;
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
 
-    //TODO: -> maybe make this private as well as the called methods
+    //TODO:
     //1. initialise distribution (for choice quote/trade and symbol) & clock
     //2. while running
     // 3. get time, calculate elapsed time
@@ -63,12 +63,12 @@ private:
     // random walk the price with the price change + some fixed volatility -> can make this more complex later
     // (modularity makes it easy to replace this method) -> could make it an interface if I am interested in different generation methods
     // create a new quote struct and fill it with the generated information & current time
-    Quote generate_quote(std::string const&);
+    Quote generate_quote(std::string const& symbol);
 
     // TODO:
     // same thing as the trade but now a quote, generation step very similar(different distribution for volumne vs size
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
-    Trade generate_trade(std::string const&);
+    Trade generate_trade(std::string const& symbol);
 
 };
 
