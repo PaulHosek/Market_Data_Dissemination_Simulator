@@ -13,8 +13,7 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include "IGenerator.h"
 #include "types.h"
-#include <string_view>
-
+#include <thread>
 //TODO moved the queues to the types, maybe should make this namespace?
 
 // Generator pushes values onto two queues for trades and quotes
@@ -44,7 +43,7 @@ private:
     // since its strings, they should be on the heap anyways so we just need a pointer-stable structure here
     std::vector<std::string> symbols_;
     uint32_t messages_per_sec_;
-    std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set
+    std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set + threadlocal?
     std::chrono::nanoseconds interval_;
     QueueType_Quote& quote_queue_;
     QueueType_Trade& trade_queue_;
@@ -53,13 +52,14 @@ private:
     std::vector<double> current_prices_;
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
 
+
     //TODO:
     //1. initialise distribution (for choice quote/trade and symbol) & clock
     //2. while running
     // 3. get time, calculate elapsed time
     // if waited for long enough (this sets the frequency) -> maybe there is a better way than sth like std::this_thread::sleep_for
     //-> call generate trade/quote and push onto queue
-    void generation_loop_();
+    void generation_loop();
 
     // TODO:
     // generate small price change & random size of quote
@@ -73,6 +73,7 @@ private:
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
     Trade generate_trade(std::string const& symbol);
 
+    // TODO: Not sure if I should mark private methods somehow (e.g., __function)
 };
 
 

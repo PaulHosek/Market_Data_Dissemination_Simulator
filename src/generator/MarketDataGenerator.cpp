@@ -11,9 +11,9 @@ MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_
     : messages_per_sec_(0),
       rng_(std::random_device{}()),
       interval_(0),
-      seed_{},
       quote_queue_(quote_queue),
       trade_queue_(trade_queue),
+      seed_{},
       running_(false) {
 }
 
@@ -52,10 +52,38 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
 
 
 
-//
-// void MarketDataGenerator::generation_loop() {
-//
-// }
+// TODO may be interesting to implement this as a coroutine.
+void MarketDataGenerator::generation_loop() {
+    std::uniform_int_distribution<size_t> symbol_distr(0, symbols_.size() -1);
+    std::uniform_int_distribution<uint8_t> type_dist(0,1);
+    std::chrono::high_resolution_clock::time_point previous_time = std::chrono::high_resolution_clock::now();
+
+
+    while (running_) {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time);
+
+        if (elapsed >= interval_) {
+            const std::size_t idx = symbol_distr(rng_);
+            const std::string& symbol = symbols_[idx];
+
+            if (type_dist(rng_)) {
+                Quote quote = generate_quote(symbol);
+                while (!quote_queue_.push(quote) && running_) {
+                    std::this_thread::yield();
+                }
+            } else {
+                Trade trade = generate_trade(symbol);
+                while (!trade_queue_.push(trade) && running_) {
+                    std::this_thread::yield();
+                }
+            }
+            previous_time = now;
+        } else {
+            std::this_thread::sleep_for(interval_ - elapsed);
+        }
+    }
+}
 
 
 /**
