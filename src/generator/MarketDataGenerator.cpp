@@ -54,21 +54,21 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
 Quote MarketDataGenerator::generate_quote(std::string const& symbol) {
     // TODO cannot use string view here because of strncpy
     std:;size_t idx = std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol));
-    std::normal_distribution<double>  price_step_dist(0.0, 0.1);
-    std::uniform_int_distribution<>   quote_size_dist(50, 500);
+    std::normal_distribution<double>  price_step(0.0, 0.1);
+    std::uniform_int_distribution<>   quote_size(50, 500);
 
 
-    current_prices_[idx] += price_step_dist(rng_);
-    double price{current_prices_[idx]};
-    double spread{price * 0.001}; // 1%
+    current_prices_[idx] += price_step(rng_);
+    const double price{current_prices_[idx]};
+    const double spread{price * 0.001}; // 1%
 
     Quote next_quote{};
     std::strncpy(next_quote.symbol, symbol.c_str(), sizeof(next_quote.symbol) -1);
     next_quote.bid_price = price - spread / 2;
     next_quote.ask_price = price + spread / 2;
-    next_quote.bid_size =  quote_size_dist(rng_); // TODO need to change this repeated calling if use seeds
-    next_quote.ask_size =  quote_size_dist(rng_);
-    quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    next_quote.bid_size =  quote_size(rng_);
+    next_quote.ask_size =  quote_size(rng_);
+    next_quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
     return next_quote;
 }
