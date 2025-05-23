@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include "spdlog/spdlog.h"
+#include <stop_token>
 
 MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_Trade trade_queue)
     : messages_per_sec_(0),
@@ -13,8 +14,9 @@ MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_
       interval_(0),
       quote_queue_(quote_queue),
       trade_queue_(trade_queue),
-      seed_{},
-      running_(false) {
+      seed_(),
+    running_(false),
+      stop_source_() {
 }
 
 void MarketDataGenerator::configure(const uint32_t messages_per_second, const std::filesystem::path &symbols_file,
@@ -33,7 +35,11 @@ void MarketDataGenerator::start() {
     }
 
     // FIXME integrate jthreads & stop tokens properly, find a better way to yield than yield
-    std::jthread generating_thread{running2_, generationLoop()};
+    std::jthread generating_thread{[this](){generation_loop(stop_source_.get_token());}};
+}
+
+void MarketDataGenerator::stop() {
+    stop_source_.request_stop();
 }
 
 
@@ -62,13 +68,13 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
 
 
 // TODO may be interesting to implement this as a coroutine.
-void MarketDataGenerator::generation_loop() {
+void MarketDataGenerator::generation_loop(std::stop_token stop_tok) {
     std::uniform_int_distribution<size_t> symbol_distr(0, symbols_.size() -1);
     std::uniform_int_distribution<uint8_t> type_dist(0,1);
     std::chrono::high_resolution_clock::time_point previous_time = std::chrono::high_resolution_clock::now();
 
 
-    while (running_) {
+    while (!stop_tok.stop_requested()) {
         auto now = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time);
 

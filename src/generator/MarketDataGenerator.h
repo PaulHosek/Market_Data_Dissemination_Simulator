@@ -34,7 +34,7 @@ public:
     // set running to false
     // join the generator thread if joinable
     // TODO maybe want to think about coroutines here for the stop and go & since they should be more lightweight than threads
-    // void stop() override;
+    void stop() override;
 
 
 private:
@@ -51,6 +51,7 @@ private:
     std::atomic<bool> running_;
     std::stop_token running2_;
     std::vector<double> current_prices_;
+    std::stop_source stop_source_;
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
 
 
@@ -60,7 +61,7 @@ private:
     // 3. get time, calculate elapsed time
     // if waited for long enough (this sets the frequency) -> maybe there is a better way than sth like std::this_thread::sleep_for
     //-> call generate trade/quote and push onto queue
-    void generation_loop();
+    void generation_loop(std::stop_token stop_tok);
 
     // TODO:
     // generate small price change & random size of quote
