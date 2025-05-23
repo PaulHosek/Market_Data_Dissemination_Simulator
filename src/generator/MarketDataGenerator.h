@@ -21,8 +21,8 @@ class MarketDataGenerator : public IGenerator{
 public:
 
 
-    MarketDataGenerator(QueueType_Quote quote_queue, QueueType_Trade trade_queue);
-    void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file, const uint32_t seed) override;
+    MarketDataGenerator(types::QueueType_Quote& quote_queue, types::QueueType_Trade& trade_queue);
+    void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file) override;
 
     //TODO:
     //1. Test if configuration happened (correctly)
@@ -45,10 +45,9 @@ private:
     uint32_t messages_per_sec_;
     std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set + threadlocal?
     std::chrono::nanoseconds interval_;
-    QueueType_Quote& quote_queue_;
-    QueueType_Trade& trade_queue_;
-    std::atomic<bool> running_;
-    std::stop_token running2_;
+    types::QueueType_Quote& quote_queue_;
+    types::QueueType_Trade& trade_queue_;
+    std::jthread generating_thread_;
     std::vector<double> current_prices_;
     std::stop_source stop_source_;
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
@@ -60,19 +59,19 @@ private:
     // 3. get time, calculate elapsed time
     // if waited for long enough (this sets the frequency) -> maybe there is a better way than sth like std::this_thread::sleep_for
     //-> call generate trade/quote and push onto queue
-    void generation_loop(std::stop_token stop_tok);
+    void generation_loop(const std::stop_token &stop_tok);
 
     // TODO:
     // generate small price change & random size of quote
     // random walk the price with the price change + some fixed volatility -> can make this more complex later
     // (modularity makes it easy to replace this method) -> could make it an interface if I am interested in different generation methods
     // create a new quote struct and fill it with the generated information & current time
-    Quote generate_quote(std::string const& symbol);
+    types::Quote generate_quote(std::string const& symbol);
 
     // TODO:
     // same thing as the trade but now a quote, generation step very similar(different distribution for volumne vs size
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
-    Trade generate_trade(std::string const& symbol);
+    types::Trade generate_trade(std::string const& symbol);
 
     // TODO: Not sure if I should mark private methods somehow (e.g., __function)
 };
