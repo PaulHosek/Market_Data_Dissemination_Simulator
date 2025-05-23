@@ -14,7 +14,6 @@ MarketDataGenerator::MarketDataGenerator(QueueType_Quote quote_queue, QueueType_
       interval_(0),
       quote_queue_(quote_queue),
       trade_queue_(trade_queue),
-      seed_(),
     running_(false),
       stop_source_() {
 }
@@ -33,8 +32,6 @@ void MarketDataGenerator::start() {
     if (messages_per_sec_ == 0 || symbols_.empty()) {
         throw std::logic_error("Generator has not been configured. Call configure first.");
     }
-
-    // FIXME integrate jthreads & stop tokens properly, find a better way to yield than yield
     std::jthread generating_thread{[this](){generation_loop(stop_source_.get_token());}};
 }
 
@@ -67,7 +64,6 @@ std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem:
 
 
 
-// TODO may be interesting to implement this as a coroutine.
 void MarketDataGenerator::generation_loop(std::stop_token stop_tok) {
     std::uniform_int_distribution<size_t> symbol_distr(0, symbols_.size() -1);
     std::uniform_int_distribution<uint8_t> type_dist(0,1);
@@ -106,7 +102,6 @@ void MarketDataGenerator::generation_loop(std::stop_token stop_tok) {
  * Symbols are all initialised at 100 for now
  ***/
 Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
-    // TODO cannot use string view here because of strncpy
     const auto idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
     std::normal_distribution<double> price_step(0.0, 0.1);
     std::uniform_int_distribution<uint32_t> quote_size(50, 500);
@@ -128,7 +123,6 @@ Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
 }
 
 Trade MarketDataGenerator::generate_trade(std::string const &symbol) {
-    // TODO the distribution properties as well as bid-ask-spread are fixed for now
     const auto idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
     std::normal_distribution<double> price_step(0.0, 0.05); // narrower than quotes
     std::uniform_int_distribution<uint32_t> trade_size(10, 100);

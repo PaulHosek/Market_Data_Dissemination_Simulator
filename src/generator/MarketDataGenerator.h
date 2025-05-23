@@ -47,7 +47,6 @@ private:
     std::chrono::nanoseconds interval_;
     QueueType_Quote& quote_queue_;
     QueueType_Trade& trade_queue_;
-    uint32_t seed_; // TODO add to the logic, not used for now
     std::atomic<bool> running_;
     std::stop_token running2_;
     std::vector<double> current_prices_;
