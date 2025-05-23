@@ -43,8 +43,10 @@ namespace types {
     // TD<sizeof(Quote)> td;
 
     // static_assert(sizeof(Quote) == 1, "false");
-    using QueueType_Quote = boost::lockfree::spsc_queue<Quote, boost::lockfree::capacity<10'000>>;
-    using QueueType_Trade = boost::lockfree::spsc_queue<Trade, boost::lockfree::capacity<10'000>>;
+    template<std::size_t N>
+    using QueueType_Quote = boost::lockfree::spsc_queue<Quote, boost::lockfree::capacity<N>>;
+    template<std::size_t N>
+    using QueueType_Trade = boost::lockfree::spsc_queue<Trade, boost::lockfree::capacity<N>>;
 }
 
 
