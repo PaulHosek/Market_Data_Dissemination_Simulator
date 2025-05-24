@@ -93,7 +93,7 @@ TEST_F(MarketDataGeneratorTest, invalid_file_throws) {
  */
 TEST_F(MarketDataGeneratorTest, restart_continues){
     using namespace std::chrono_literals;
-    generator_->configure(100, test_file_path);
+    generator_->configure(1000, test_file_path);
 
     generator_->start();
     std::this_thread::sleep_for(10ms);
@@ -128,11 +128,10 @@ TEST_F(MarketDataGeneratorTest, test_valid_data) {
     bool has_valid_data = true;
 
     while (quote_queue_.pop(quote)) {
-        bool valid_quote {std::string_view(trade.symbol) == "SINGLE" &&
+        bool valid_quote {std::string_view(quote.symbol) == "SINGLE" &&
         quote.bid_price > 0 && quote.ask_price > quote.bid_price &&
         quote.bid_size > 0 && quote.ask_size > 0 && quote.timestamp > 0};
         if (!valid_quote) {
-            has_valid_data = false;
             EXPECT_TRUE(has_valid_data);
             return;
         }
@@ -153,6 +152,7 @@ TEST_F(MarketDataGeneratorTest, test_valid_data) {
 
 TEST_F(MarketDataGeneratorTest, approximate_message_rate) {
     using namespace std::chrono_literals;
+    // TODO add different sizes to this test to test
     generator_->configure(1000, test_file_path);
     generator_->start();
     std::this_thread::sleep_for(1s);
@@ -161,6 +161,21 @@ TEST_F(MarketDataGeneratorTest, approximate_message_rate) {
     EXPECT_GE(total_messages, 800);
     EXPECT_LE(total_messages, 1200);
 }
+
+
+TEST_F(MarketDataGeneratorTest, handles_queue_full) {
+    using namespace std::chrono_literals;
+   generator_->configure(10'000, test_file_path);
+    generator_->start();
+    std::this_thread::sleep_for(1s);
+    generator_->stop();
+
+    const std::size_t queue_size = count_messages();
+    EXPECT_GE(queue_size ,10000);
+    EXPECT_LE(queue_size ,10200);
+
+}
+
 
 
 
