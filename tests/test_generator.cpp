@@ -117,9 +117,10 @@ TEST_F(MarketDataGeneratorTest, restart_continues){
 
 
 TEST_F(MarketDataGeneratorTest, test_valid_data) {
+    using namespace std::chrono_literals;
     generator_->configure(1000, test_file_single_path);
     generator_->start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(100ms);
     generator_->stop();
 
     types::Quote quote;
@@ -148,6 +149,28 @@ TEST_F(MarketDataGeneratorTest, test_valid_data) {
 
     EXPECT_TRUE(has_valid_data);
 }
+
+
+TEST_F(MarketDataGeneratorTest, approximate_message_rate) {
+    using namespace std::chrono_literals;
+    generator_->configure(1000, test_file_path);
+    generator_->start();
+    std::this_thread::sleep_for(1s);
+    generator_->stop();
+    const size_t total_messages = count_messages();
+    EXPECT_GE(total_messages, 800);
+    EXPECT_LE(total_messages, 1200);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

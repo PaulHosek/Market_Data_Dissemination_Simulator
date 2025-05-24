@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <queue>
 
 #include "spdlog/spdlog.h"
 #include <stop_token>
@@ -20,9 +21,13 @@ MarketDataGenerator::MarketDataGenerator(types::QueueType_Quote& quote_queue, ty
 }
 
 void MarketDataGenerator::configure(const uint32_t messages_per_second, const std::filesystem::path &symbols_file) {
+    if (messages_per_second < 1000) {
+        throw std::invalid_argument("Message rate must be 1000 or larger.");
+    }
+
     messages_per_sec_ = messages_per_second;
     symbols_ = read_symbols_file(symbols_file);
-    interval_ = std::chrono::nanoseconds(1'000'000 / messages_per_sec_);
+    interval_ = std::chrono::nanoseconds(1'000'000'000 / messages_per_sec_);
     current_prices_.resize(symbols_.size(), 100); // initial symbol price
     spdlog::info("Generator configuration complete: {} messages/sec, {} symbols", messages_per_second, symbols_.size());
 }
@@ -73,27 +78,21 @@ void MarketDataGenerator::generation_loop(const std::stop_token &stop_tok) {
 
     while (!stop_tok.stop_requested()) {
         auto now = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time);
 
-        if (elapsed >= interval_) {
+        if (auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time); elapsed >= interval_) {
             const std::size_t idx = symbol_distr(rng_);
             const std::string& symbol = symbols_[idx];
-
             if (type_dist(rng_)) {
                 types::Quote quote = generate_quote(symbol);
-                while (!quote_queue_.write_available()){
-                    quote_queue_.push(quote);
-                    std::this_thread::yield(); // TODO should consider changing this to not burn CPU cycls
-                // while (!stop_tok.stop_requested() && !) {
-                    // std::this_thread::sleep_for(std::chrono::nanoseconds(100));
-                    if (stop_tok.stop_requested()) return;
 
+                while (!stop_tok.stop_requested() && !quote_queue_.push(quote)) {
+                    std::this_thread::yield(); // TODO should consider changing this to not burn CPU cycls
+                    if (stop_tok.stop_requested()) return;
                 }
             } else {
                 types::Trade trade = generate_trade(symbol);
                 while (!stop_tok.stop_requested() && !trade_queue_.push(trade)) {
-                    // std::this_thread::yield();
-                    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+                    std::this_thread::yield();
                     if (stop_tok.stop_requested()) return;
                 }
             }
@@ -103,7 +102,11 @@ void MarketDataGenerator::generation_loop(const std::stop_token &stop_tok) {
         }
     }
 }
-
+// while (!quote_queue_.write_available() && !stop_tok.stop_requested()){
+//     std::this_thread::yield();
+// }
+// quote_queue_.push(quote);
+// if (stop_tok.stop_requested()) return;
 
 /**
  * Generates a quote struct and fills it with values matching the random walk of a symbol.
