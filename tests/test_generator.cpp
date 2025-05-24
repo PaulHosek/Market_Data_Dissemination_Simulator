@@ -32,21 +32,26 @@ protected:
     void create_single_symb_file() {
         std::ofstream file(test_file_single_path);
         file << "SINGLE\n";
+        file << "SINGLE\n";
         file.close();
     }
 
-    void delete_test_file() {
+    void delete_test_files() {
         if (std::filesystem::exists(test_file_path)) {
             std::filesystem::remove(test_file_path);
+        }
+        if (std::filesystem::exists(test_file_single_path)){
+            std::filesystem::remove(test_file_single_path);
         }
     }
     void SetUp() override {
         create_test_tickers_file();
+        create_single_symb_file();
         generator_ = std::make_unique<MarketDataGenerator>(quote_queue_, trade_queue_);
     }
 
     void TearDown() override {
-        delete_test_file();
+        delete_test_files();
         generator_->stop();
     }
 
@@ -112,27 +117,35 @@ TEST_F(MarketDataGeneratorTest, restart_continues){
 
 
 TEST_F(MarketDataGeneratorTest, test_valid_data) {
-    generator_->configure(1000, test_file_path);
+    generator_->configure(1000, test_file_single_path);
     generator_->start();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     generator_->stop();
 
     types::Quote quote;
     types::Trade trade;
-    bool has_valid_data = false;
+    bool has_valid_data = true;
+
     while (quote_queue_.pop(quote)) {
-        if (std::string_view(quote.symbol).find("SINGLE") != std::string_view::npos &&
-            quote.bid_price > 0 && quote.ask_price > quote.bid_price &&
-            quote.bid_size > 0 && quote.ask_size > 0 && quote.timestamp > 0) {
-            has_valid_data = true;
+        bool valid_quote {std::string_view(trade.symbol) == "SINGLE" &&
+        quote.bid_price > 0 && quote.ask_price > quote.bid_price &&
+        quote.bid_size > 0 && quote.ask_size > 0 && quote.timestamp > 0};
+        if (!valid_quote) {
+            has_valid_data = false;
+            EXPECT_TRUE(has_valid_data);
+            return;
         }
     }
     while (trade_queue_.pop(trade)) {
-        if (std::string_view(trade.symbol).find("SINGLE") != std::string_view::npos &&
-            trade.price > 0 && trade.volume > 0 && trade.timestamp > 0) {
-            has_valid_data = true;
+        bool valid_trade {std::string_view(trade.symbol) == "SINGLE" &&
+            trade.price > 0 && trade.volume > 0 && trade.timestamp > 0};
+        if (!valid_trade) {
+            has_valid_data = false;
+            EXPECT_TRUE(has_valid_data);
+            return;
         }
     }
+
     EXPECT_TRUE(has_valid_data);
 }
 
