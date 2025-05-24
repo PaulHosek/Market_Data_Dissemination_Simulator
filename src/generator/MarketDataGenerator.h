@@ -20,28 +20,11 @@
 class MarketDataGenerator : public IGenerator{
 public:
 
-    template<std::size_t queue_size>
-    MarketDataGenerator::MarketDataGenerator(types::QueueType_Quote<queue_size>& quote_queue, types::QueueType_Trade<queue_size>& trade_queue)
-        : messages_per_sec_(0),
-          rng_(std::random_device{}()),
-          interval_(0),
-          quote_queue_<queue_size>(quote_queue),
-          trade_queue_<queue_size>(trade_queue),
-          stop_source_() {
-    }
-    // MarketDataGenerator(types::QueueType_Quote<queue_size>& quote_queue, types::QueueType_Trade<queue_size>& trade_queue);
+    MarketDataGenerator(types::QueueType_Quote& quote_queue, types::QueueType_Trade& trade_queue);
     void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file) override;
 
-    //TODO:
-    //1. Test if configuration happened (correctly)
-    //2. set running to true
-    //3. push generation loop to the generator thread
     void start() override;
 
-    // TODO:
-    // set running to false
-    // join the generator thread if joinable
-    // TODO maybe want to think about coroutines here for the stop and go & since they should be more lightweight than threads
     void stop() override;
 
 
@@ -54,10 +37,8 @@ private:
     std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set + threadlocal?
     std::chrono::nanoseconds interval_;
 
-    template<std::size_t queue_size>
-    types::QueueType_Quote<queue_size>& quote_queue_;
-    template<std::size_t queue_size>
-    types::QueueType_Trade<queue_size>& trade_queue_;
+    types::QueueType_Quote& quote_queue_;
+    types::QueueType_Trade& trade_queue_;
 
     std::jthread generating_thread_;
     std::vector<double> current_prices_;

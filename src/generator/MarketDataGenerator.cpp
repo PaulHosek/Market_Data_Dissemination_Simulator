@@ -10,15 +10,14 @@
 #include "spdlog/spdlog.h"
 #include <stop_token>
 
-// template<std::size_t queue_size>
-// MarketDataGenerator::MarketDataGenerator(types::QueueType_Quote<queue_size>& quote_queue, types::QueueType_Trade<queue_size>& trade_queue)
-//     : messages_per_sec_(0),
-//       rng_(std::random_device{}()),
-//       interval_(0),
-//       quote_queue_(quote_queue),
-//       trade_queue_(trade_queue),
-//       stop_source_() {
-// }
+MarketDataGenerator::MarketDataGenerator(types::QueueType_Quote& quote_queue, types::QueueType_Trade& trade_queue)
+    : messages_per_sec_(0),
+      rng_(std::random_device{}()),
+      interval_(0),
+      quote_queue_(quote_queue),
+      trade_queue_(trade_queue),
+      stop_source_() {
+}
 
 void MarketDataGenerator::configure(const uint32_t messages_per_second, const std::filesystem::path &symbols_file) {
     messages_per_sec_ = messages_per_second;

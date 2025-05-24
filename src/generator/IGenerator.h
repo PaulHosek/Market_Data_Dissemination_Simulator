@@ -4,6 +4,8 @@
 
 #ifndef IGENERATOR_H
 #define IGENERATOR_H
+#include <cstdint>
+#include <filesystem>
 
 class IGenerator {
 public:

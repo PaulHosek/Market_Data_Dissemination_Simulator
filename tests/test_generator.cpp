@@ -14,8 +14,8 @@ class MarketDataGeneratorTest : public ::testing::Test {
 protected:
     std::filesystem::path test_file_path = "test_tickers.txt";
     std::filesystem::path test_file_single_path = "test_ticker_singlesymb.txt";
-    types::QueueType_Quote<1000> quote_queue_{};
-    types::QueueType_Trade<1000> trade_queue_{};
+    types::QueueType_Quote quote_queue_{};
+    types::QueueType_Trade trade_queue_{};
     // std::unique_ptr<MarketDataGenerator> generator_;
     std::unique_ptr<MarketDataGenerator> generator_;
     // std::unique_ptr<MarketDataGenerator> generator_{quote_queue_, trade_queue_};
@@ -88,7 +88,7 @@ TEST_F(MarketDataGeneratorTest, invalid_file_throws) {
  */
 TEST_F(MarketDataGeneratorTest, restart_continues){
     using namespace std::chrono_literals;
-    generator_->configure(1000, test_file_path);
+    generator_->configure(100, test_file_path);
 
     generator_->start();
     std::this_thread::sleep_for(10ms);
