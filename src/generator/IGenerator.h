@@ -9,7 +9,7 @@
 
 class IGenerator {
 public:
-    virtual ~IGenerator() {};
+    virtual ~IGenerator() = default;
     virtual void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file) = 0;
     virtual void start() = 0;
     virtual void stop() = 0;

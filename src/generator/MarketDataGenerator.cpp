@@ -38,7 +38,6 @@ void MarketDataGenerator::start() {
     }
     // TODO double check this, it may join the thread just after constructing it
     generating_thread_ = std::jthread{[this](){generation_loop(stop_source_.get_token());}};
-    using namespace std::chrono_literals;
 }
 
 void MarketDataGenerator::stop() {
@@ -102,11 +101,7 @@ void MarketDataGenerator::generation_loop(const std::stop_token &stop_tok) {
         }
     }
 }
-// while (!quote_queue_.write_available() && !stop_tok.stop_requested()){
-//     std::this_thread::yield();
-// }
-// quote_queue_.push(quote);
-// if (stop_tok.stop_requested()) return;
+
 
 /**
  * Generates a quote struct and fills it with values matching the random walk of a symbol.

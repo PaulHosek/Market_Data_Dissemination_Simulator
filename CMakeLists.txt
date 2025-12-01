@@ -23,8 +23,9 @@ include_directories(src)
 # Main executable
 add_executable(main_simulate
         src/main.cpp
-#        src/types.h
+        src/disseminator/Disseminator.cpp
         src/generator/MarketDataGenerator.cpp
+        src/disseminator/Disseminator.cpp
 )
 
 # Link libraries for main executable
@@ -41,6 +42,9 @@ add_executable(generator_tests
         src/generator/MarketDataGenerator.cpp
         tests/test_generator.cpp
         src/generator/types.h
+        src/disseminator/Disseminator.cpp
+        src/disseminator/Disseminator.h
+        src/disseminator/IDisseminator.h
         #        src/types.h
 )
 
