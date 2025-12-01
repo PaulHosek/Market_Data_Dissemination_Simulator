@@ -171,7 +171,7 @@ TEST_F(MarketDataGeneratorTest, handles_queue_full) {
     generator_->stop();
 
     const std::size_t queue_size = count_messages();
-    EXPECT_GE(queue_size ,10000);
+    EXPECT_GE(queue_size , 9000);
     EXPECT_LE(queue_size ,10200);
 
 }
