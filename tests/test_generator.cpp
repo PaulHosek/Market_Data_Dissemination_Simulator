@@ -7,7 +7,7 @@
 
 #include "../src/generator/MarketDataGenerator.h"
 // #include "MarketDataGenerator.h"
-#include "../src/generator/types.h"
+#include "../src/utils/types.h"
 
 
 class MarketDataGeneratorTest : public ::testing::Test {

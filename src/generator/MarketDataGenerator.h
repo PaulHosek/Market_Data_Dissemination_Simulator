@@ -12,7 +12,7 @@
 #include <vector>
 #include <boost/lockfree/spsc_queue.hpp>
 #include "IGenerator.h"
-#include "types.h"
+#include "utils/types.h"
 #include <thread>
 //TODO moved the queues to the types, maybe should make this namespace?
 
@@ -46,7 +46,7 @@ private:
     static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
 
 
-    //TODO:
+    //Note:
     //1. initialise distribution (for choice quote/trade and symbol) & clock
     //2. while running
     // 3. get time, calculate elapsed time
@@ -54,14 +54,14 @@ private:
     //-> call generate trade/quote and push onto queue
     void generation_loop(const std::stop_token &stop_tok);
 
-    // TODO:
+    // Note:
     // generate small price change & random size of quote
     // random walk the price with the price change + some fixed volatility -> can make this more complex later
     // (modularity makes it easy to replace this method) -> could make it an interface if I am interested in different generation methods
     // create a new quote struct and fill it with the generated information & current time
     types::Quote generate_quote(std::string const& symbol);
 
-    // TODO:
+    // Note:
     // same thing as the trade but now a quote, generation step very similar(different distribution for volumne vs size
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
     types::Trade generate_trade(std::string const& symbol);

@@ -26,6 +26,8 @@ add_executable(main_simulate
         src/disseminator/Disseminator.cpp
         src/generator/MarketDataGenerator.cpp
         src/disseminator/Disseminator.cpp
+        src/utils/WaitableSpscQueue.cpp
+        src/utils/WaitableSpscQueue.h
 )
 
 # Link libraries for main executable
@@ -41,10 +43,12 @@ add_executable(generator_tests
         tests/test_sanity_basic.cpp
         src/generator/MarketDataGenerator.cpp
         tests/test_generator.cpp
-        src/generator/types.h
+        src/utils/types.h
         src/disseminator/Disseminator.cpp
         src/disseminator/Disseminator.h
         src/disseminator/IDisseminator.h
+        src/utils/WaitableSpscQueue.cpp
+        src/utils/WaitableSpscQueue.h
         #        src/types.h
 )
 

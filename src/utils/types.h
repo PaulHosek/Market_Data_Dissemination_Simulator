@@ -8,6 +8,9 @@
 
 #include <cstdint>
 #include <cstring>
+#include <boost/lockfree/spsc_queue.hpp>
+
+#include "WaitableSpscQueue.h"
 
 namespace types {
     // Cache lines are 64 byte on my machine
@@ -42,10 +45,18 @@ namespace types {
     // template<int N>
     // class TD;
     // TD<sizeof(Quote)> td;
-
     // static_assert(sizeof(Quote) == 1, "false");
-    using QueueType_Quote = boost::lockfree::spsc_queue<Quote, boost::lockfree::capacity<10'000>>;
-    using QueueType_Trade = boost::lockfree::spsc_queue<Trade, boost::lockfree::capacity<10'000>>;
+    using QueueType_Quote = WaitableSpscQueue<Quote, 10'000>;
+    using QueueType_Trade = WaitableSpscQueue<Trade, 10'000>;
+
+    // template<typename Q>
+    // concept BoostSpscQueue = requires
+    // {
+    //     // requires std::same_as<<Q, boost::lockfree::spsc_queue<ValueType>>;
+    //     requires std::same_as<Q, boost::lockfree::spsc_queue<types::Trade>> ||
+    //     requires std::same_as<Q, boost::lockfree::spsc_queue<types::Quote>>;
+    // };
+    //
 }
 
 

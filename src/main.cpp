@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "generator/MarketDataGenerator.h"
-#include "generator/types.h"
+#include "utils/types.h"
 #include "chrono"
 
 int main() {
