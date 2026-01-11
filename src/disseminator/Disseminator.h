@@ -18,13 +18,12 @@ public:
     Disseminator(types::QueueType_Quote& quotes, types::QueueType_Trade& trades);
     ~Disseminator() override;
 
-
     void start() override;
+    void process() override;
     void stop() override;
 
 private:
 
-    void process() override;
     void consume_quotes(types::QueueType_Quote& q, const std::stop_token &stoken);
     void consume_trades(types::QueueType_Trade& q, const std::stop_token &stoken);
 

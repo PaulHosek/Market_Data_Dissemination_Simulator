@@ -49,6 +49,7 @@ add_executable(generator_tests
         src/disseminator/IDisseminator.h
         src/utils/WaitableSpscQueue.cpp
         src/utils/WaitableSpscQueue.h
+        tests/waitable_queue_test.cpp
         #        src/types.h
 )
 
