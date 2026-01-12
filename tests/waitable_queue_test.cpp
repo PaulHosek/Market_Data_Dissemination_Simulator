@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include <chrono>
+#include <utility>
 #include "utils/WaitableSpscQueue.h"
 using TestQueue = WaitableSpscQueue<int, 10>;
 
@@ -19,7 +20,8 @@ TEST(WaitableSpscQueueTest, PushAndPop) {
 TEST(WaitableSpscQueueTest, WaitWhenEmpty) {
     TestQueue queue;
     std::jthread consumer([&] {
-        queue.wait();
+        auto st = std::stop_token();
+        queue.wait(st);
         int value;
         EXPECT_TRUE(queue.pop(value));
         EXPECT_EQ(value, 42);
@@ -31,8 +33,8 @@ TEST(WaitableSpscQueueTest, WaitWhenEmpty) {
 
 TEST(WaitableSpscQueueTest, NotificationWakesUp) {
     TestQueue queue;
-    std::jthread consumer([&] {
-        queue.wait();
+    std::jthread consumer([&](std::stop_token st) {
+        queue.wait(std::move(st));
         int value;
         queue.pop(value);
         EXPECT_EQ(value, 100);

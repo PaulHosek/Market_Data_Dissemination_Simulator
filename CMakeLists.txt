@@ -50,6 +50,8 @@ add_executable(generator_tests
         src/utils/WaitableSpscQueue.cpp
         src/utils/WaitableSpscQueue.h
         tests/waitable_queue_test.cpp
+        tests/disseminator_test.cpp
+        tests/disseminator_test.h
         #        src/types.h
 )
 

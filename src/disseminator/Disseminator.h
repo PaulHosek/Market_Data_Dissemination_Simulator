@@ -32,6 +32,7 @@ private:
 
 
     // hashmap mapping <symbol ID, quotes>
+    // TODO: unoredered_map has bad cache locality and other poor performance problems. Could we use std::hive?
     std::unordered_map<std::string, types::QueueType_Quote> symbols_quotes_;
     std::unordered_map<std::string, types::QueueType_Trade> symbols_trades_;
     std::vector<std::jthread> workers_;

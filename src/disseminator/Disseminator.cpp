@@ -48,7 +48,7 @@ void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_tok
             symbols_quotes_[qt.symbol].push(std::move(qt));
             // TODO: forward to subscribers here
         } else {
-            q.wait();
+            q.wait(stoken);
         }
     }
 }
@@ -61,7 +61,7 @@ void Disseminator::consume_trades(types::QueueType_Trade& q, const std::stop_tok
             symbols_trades_[tr.symbol].push(std::move(tr));
             // TODO: forward to subscribers here
         } else {
-            q.wait();
+            q.wait(stoken);
         }
     }
 }
