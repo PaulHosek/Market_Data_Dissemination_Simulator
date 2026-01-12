@@ -15,6 +15,7 @@ endif()
 find_package(Boost REQUIRED COMPONENTS lockfree)
 find_package(spdlog REQUIRED)
 find_package(GTest REQUIRED)
+find_package(cppzmq CONFIG REQUIRED)
 
 # Include directories
 include_directories(include)
@@ -34,6 +35,7 @@ add_executable(main_simulate
 target_link_libraries(main_simulate
         PRIVATE Boost::lockfree
         PRIVATE spdlog::spdlog
+        PRIVATE cppzmq
 )
 
 # Test executable
@@ -49,9 +51,11 @@ add_executable(generator_tests
         src/disseminator/IDisseminator.h
         src/utils/WaitableSpscQueue.cpp
         src/utils/WaitableSpscQueue.h
-        tests/waitable_queue_test.cpp
-        tests/disseminator_test.cpp
-        tests/disseminator_test.h
+        tests/test_waitable_queue.cpp
+        tests/test_disseminator.cpp
+        tests/test_disseminator.h
+        src/subscriber/SubscriberInterface.cpp
+        src/subscriber/SubscriberInterface.h
         #        src/types.h
 )
 
@@ -59,6 +63,7 @@ target_link_libraries(generator_tests
         PRIVATE GTest::gtest_main
         PRIVATE Boost::lockfree
         PRIVATE spdlog::spdlog
+        PRIVATE cppzmq
 )
 
 # Add tests to CTest

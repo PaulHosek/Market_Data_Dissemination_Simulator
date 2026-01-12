@@ -15,7 +15,7 @@ Disseminator::Disseminator(types::QueueType_Quote& quotes, types::QueueType_Trad
 {}
 
 Disseminator::~Disseminator() {
-    stop();
+    Disseminator::stop();
 }
 
 
@@ -39,7 +39,6 @@ void Disseminator::process() {
 }
 
 
-// makes not much sense to have template here since it will only be quotes -> maybe have one generic function instead
 void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_token& stoken) {
 
     types::Quote qt;
