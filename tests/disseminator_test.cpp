@@ -18,7 +18,6 @@ protected:
         disseminator_.stop();
     }
 
-    // Helper to count consumed messages from input queues
     size_t count_remaining_messages() {
         size_t count = 0;
         types::Quote quote;
@@ -43,7 +42,6 @@ TEST_F(DisseminatorTest, ProcessStartsWorkers) {
 }
 
 TEST_F(DisseminatorTest, ConsumesQuotes) {
-    // Push sample quotes to input queue
     types::Quote quote1;
     std::strncpy(quote1.symbol, "AAPL", sizeof(quote1.symbol) - 1);
     quote1.bid_price = 150.0;
@@ -63,16 +61,14 @@ TEST_F(DisseminatorTest, ConsumesQuotes) {
     quote_queue_.push(quote2);
 
     disseminator_.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Allow consumption
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     disseminator_.stop();
 
-    EXPECT_EQ(count_remaining_messages(), 0); // All quotes should be consumed
+    EXPECT_EQ(count_remaining_messages(), 0);
 }
 
 
-// Test that trades are consumed from input queue
 TEST_F(DisseminatorTest, ConsumesTrades) {
-    // Push sample trades to input queue
     types::Trade trade1;
     std::strncpy(trade1.symbol, "AAPL", sizeof(trade1.symbol) - 1);
     trade1.price = 150.25;
@@ -88,29 +84,26 @@ TEST_F(DisseminatorTest, ConsumesTrades) {
     trade_queue_.push(trade2);
 
     disseminator_.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Allow consumption
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     disseminator_.stop();
 
-    EXPECT_EQ(count_remaining_messages(), 0); // All trades should be consumed
+    EXPECT_EQ(count_remaining_messages(), 0);
 }
 
 TEST_F(DisseminatorTest, HandlesEmptyQueues) {
     disseminator_.start();
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     disseminator_.stop();
-    EXPECT_EQ(count_remaining_messages(), 0); // No messages, no crash
+    EXPECT_EQ(count_remaining_messages(), 0);
 }
 
-// Test that stop can be called before start (no crash)
 TEST_F(DisseminatorTest, StopBeforeStart) {
     EXPECT_NO_THROW(disseminator_.stop());
 }
 
-// Test that multiple start calls don't duplicate workers
 TEST_F(DisseminatorTest, MultipleStartsNoDuplication) {
     disseminator_.start();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    disseminator_.start(); // Should not add duplicate workers
+    disseminator_.start(); // not add duplicate workers
     disseminator_.stop();
-    // Verify no crash
 }
