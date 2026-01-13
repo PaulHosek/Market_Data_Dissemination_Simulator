@@ -27,7 +27,7 @@ TEST(WaitableSpscQueueTest, WaitWhenEmpty) {
         EXPECT_EQ(value, 42);
     });
 
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_TRUE(queue.push(42));
 }
 
