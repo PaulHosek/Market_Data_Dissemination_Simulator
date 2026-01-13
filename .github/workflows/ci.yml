@@ -39,6 +39,7 @@ jobs:
           .\vcpkg\vcpkg install boost-lockfree:x64-mingw-dynamic --recurse --debug || exit 1
           .\vcpkg\vcpkg install spdlog:x64-mingw-dynamic --recurse --debug || exit 1
           .\vcpkg\vcpkg install gtest:x64-mingw-dynamic --recurse --debug || exit 1
+          .\vcpkg\vcpkg install cppzmq:x64-mingw-dynamic --recurse --debug || exit 1
           dir vcpkg\installed\x64-mingw-dynamic\lib
           dir vcpkg\installed\x64-mingw-dynamic\include
       - name: Verify vcpkg toolchain
