@@ -50,6 +50,7 @@ add_executable(generator_tests
         tests/test_subscriber_interface.cpp
         src/subscriber/SubscriberInterface.cpp
         src/subscriber/SubscriberInterface.h
+        tests/test_integration_disseminator_subscriberInterface.cpp
         #        src/types.h
 )
 

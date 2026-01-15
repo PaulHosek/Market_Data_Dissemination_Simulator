@@ -1,7 +1,3 @@
-//
-// Created by paul on 11-Jan-26.
-//
-
 #include <gtest/gtest.h>
 #include <thread>
 #include <chrono>

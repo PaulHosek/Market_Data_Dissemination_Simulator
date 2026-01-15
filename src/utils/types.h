@@ -29,7 +29,7 @@ namespace types {
 
     };
     // TODO think about if we want to align this as 32 bit
-    struct alignas(32) Trade {
+    struct Trade {
         char symbol[8];
         uint64_t timestamp{0};
         uint32_t volume{0};
