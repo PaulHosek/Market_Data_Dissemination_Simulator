@@ -19,8 +19,10 @@
 class SubscriberInterface {
 public:
     SubscriberInterface(std::string_view multicast_address, std::string_view tcp_address);
+
+    SubscriberInterface(zmq::socket_t &&multicast_sub, zmq::socket_t &&tcp_req);
+
     // overload for testing with mock sockets
-    SubscriberInterface(zmq::socket_t& multicast_sub, zmq::socket_t& tcp_req);
     ~SubscriberInterface();
 
     void start();

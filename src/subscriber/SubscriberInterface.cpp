@@ -15,15 +15,20 @@ SubscriberInterface::SubscriberInterface(std::string_view multicast_address, std
 
     multicast_sub_.connect(std::string{multicast_address});
     multicast_sub_.set(zmq::sockopt::subscribe, "");
+    multicast_sub_.set(zmq::sockopt::rcvtimeo, 1000);
 
     tcp_req_.connect(std::string{tcp_address});
+    tcp_req_.set(zmq::sockopt::rcvtimeo, 1000);
 }
 
-// Overload for testing
-SubscriberInterface::SubscriberInterface(zmq::socket_t& multicast_sub, zmq::socket_t& tcp_req)
-    : context_(0), // don't need context if move sockets in
+SubscriberInterface::SubscriberInterface(zmq::socket_t&& multicast_sub, zmq::socket_t&& tcp_req)
+    : context_(1),
       multicast_sub_(std::move(multicast_sub)),
-      tcp_req_(std::move(tcp_req)) {}
+      tcp_req_(std::move(tcp_req)) {
+
+    this->multicast_sub_.set(zmq::sockopt::rcvtimeo, 200);
+    this->tcp_req_.set(zmq::sockopt::rcvtimeo, 1000);
+}
 
 SubscriberInterface::~SubscriberInterface() {
     stop();
@@ -34,15 +39,22 @@ void SubscriberInterface::start() {
 }
 
 void SubscriberInterface::stop() {
-    multicast_sub_.close();
-    tcp_req_.close();
+    receiver_thread_.request_stop();
+
+    if (multicast_sub_.handle() != nullptr) {
+        multicast_sub_.set(zmq::sockopt::linger, 0);
+        multicast_sub_.close();
+    }
+    if (tcp_req_.handle() != nullptr) {
+        tcp_req_.set(zmq::sockopt::linger, 0);
+        tcp_req_.close();
+    }
 }
 
 void SubscriberInterface::subscribe(std::string_view symbol) {
     subscriptions_.insert(std::string{symbol});
-
-    zmq::message_t request(symbol.data(), symbol.size());
-
+    std::string sub = "subscribe " + std::string{symbol};
+    zmq::message_t request(sub.data(), sub.size());
     if (auto res = tcp_req_.send(request, zmq::send_flags::none); !res) {
         spdlog::error("Failed to send subscription request for {}", symbol);
         return;
@@ -55,53 +67,59 @@ void SubscriberInterface::subscribe(std::string_view symbol) {
 
 void SubscriberInterface::unsubscribe(std::string_view symbol) {
     subscriptions_.erase(std::string{symbol});
-
     std::string unsub = "unsubscribe " + std::string{symbol};
     zmq::message_t request(unsub.data(), unsub.size());
-
-    if (tcp_req_.send(request, zmq::send_flags::none)) {
-        zmq::message_t reply;
-        (void)tcp_req_.recv(reply, zmq::recv_flags::none); // TODO log this results of this later, void is placeholder
+    if (auto res = tcp_req_.send(request, zmq::send_flags::none); !res) {
+        spdlog::error("Failed to send unsubscription request for {}", symbol);
+        return;
+    }
+    zmq::message_t reply;
+    if (auto res_recv = tcp_req_.recv(reply, zmq::recv_flags::none)) {
         spdlog::info("Unsubscribed from {}", symbol);
     }
 }
 
 void SubscriberInterface::receive_loop(std::stop_token st) {
     while (!st.stop_requested()) {
-        zmq::message_t msg;
+        try {
+            zmq::message_t msg;
 
-        // ensure we check stop_token
-        auto res = multicast_sub_.recv(msg, zmq::recv_flags::none);
+            auto res = multicast_sub_.recv(msg, zmq::recv_flags::none);
 
-        if (!res || msg.size() < 1) continue;
+            if (!res || msg.size() < 1) continue;
 
-        // deserialize, get type then use memcpy to ensure alignment is right
-        uint8_t type = static_cast<const uint8_t*>(msg.data())[0];
-        if (type == 0 && msg.size() >= sizeof(types::Quote) + 1) {
-            types::Quote quote;
-            std::memcpy(&quote, static_cast<const uint8_t*>(msg.data()) + 1, sizeof(types::Quote));
+            // deserialize, get type then use memcpy to ensure alignment is right
+            uint8_t type = static_cast<const uint8_t*>(msg.data())[0];
+            if (type == 0 && msg.size() >= sizeof(types::Quote) + 1) {
+                types::Quote quote;
+                std::memcpy(&quote, static_cast<const uint8_t*>(msg.data()) + 1, sizeof(types::Quote));
 
-            if (subscriptions_.contains(quote.symbol)) {
-                deliver_to_client(quote);
+                if (subscriptions_.contains(quote.symbol)) {
+                    deliver_to_client(quote);
+                }
             }
-        }
-        else if (type == 1 && msg.size() >= sizeof(types::Trade) + 1) {
-            types::Trade trade;
-            std::memcpy(&trade, static_cast<const uint8_t*>(msg.data()) + 1, sizeof(types::Trade));
+            else if (type == 1 && msg.size() >= sizeof(types::Trade) + 1) {
+                types::Trade trade;
+                std::memcpy(&trade, static_cast<const uint8_t*>(msg.data()) + 1, sizeof(types::Trade));
 
-            if (subscriptions_.contains(trade.symbol)) {
-                deliver_to_client(trade);
+                if (subscriptions_.contains(trade.symbol)) {
+                    deliver_to_client(trade);
+                }
             }
+        } catch (const zmq::error_t& e) {
+            // if the socket was closed by stop(), we just exit the loop
+            if (e.num() == ETERM || e.num() == ENOTSOCK) {
+                break;
+            }
+            spdlog::error("ZMQ error in receive loop: {}", e.what());
         }
     }
 }
 
 void SubscriberInterface::deliver_to_client(const types::Quote& quote) {
     spdlog::info("Delivered quote for {}", quote.symbol);
-    // stub: send to client via tcp or shared memory in full implementation
 }
 
 void SubscriberInterface::deliver_to_client(const types::Trade& trade) {
     spdlog::info("Delivered trade for {}", trade.symbol);
-    // stub: send to client
 }
