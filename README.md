@@ -2,7 +2,7 @@
 
 [![CMake CI](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml)
 
-A high-performance C++23 app to simulate low-latency market data feeds.
+A high-performance C++23 app to simulate low-latency market data feeds. For autodidactic purposes primarily.
 
 ## Build Instructions
 ### Prerequisites
