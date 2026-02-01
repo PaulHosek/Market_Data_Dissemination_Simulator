@@ -2,7 +2,12 @@
 
 [![CMake CI](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml)
 
-A high-performance C++23 app to simulate low-latency market data feeds. For autodidactic purposes primarily.
+A high-performance C++23 app to simulate low-latency market data feeds. For autodidactic purposes.
+
+## Project Status: Ongoing
+* **Completed:** Data generator, lockfree queue, disseminator-generator integration, subscriber interface
+* **In Progress:** Linking subscriber interface and disseminator with UDP multicast and TCP for connection management.
+* **Next steps:** Integration tests for disseminator-subscriber interface, Performance Measurement
 
 ## Build Instructions
 ### Prerequisites
