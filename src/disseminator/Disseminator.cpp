@@ -34,7 +34,6 @@ Disseminator::Disseminator(types::QueueType_Quote& quotes,
 }
 
 Disseminator::~Disseminator() {
-    // avoid calling virtual function in destructor
     stop_internal_();
 }
 
