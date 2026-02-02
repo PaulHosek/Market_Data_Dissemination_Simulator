@@ -34,7 +34,8 @@ Disseminator::Disseminator(types::QueueType_Quote& quotes,
 }
 
 Disseminator::~Disseminator() {
-    Disseminator::stop();
+    // avoid calling virtual function in destructor
+    stop_internal_();
 }
 
 void Disseminator::start() {
@@ -42,6 +43,10 @@ void Disseminator::start() {
 }
 
 void Disseminator::stop() {
+    stop_internal_();
+}
+
+void Disseminator::stop_internal_() {
     workers_.clear();
 
     if (control_thread_.joinable()) {
@@ -68,7 +73,7 @@ void Disseminator::process() {
     control_thread_ = std::jthread([this](std::stop_token st) { run_control_plane(st); });
 }
 
-void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_token& stoken) {
+void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_token stoken) {
     types::Quote qt;
     static constinit auto msg_size = sizeof(uint8_t) + sizeof(types::Quote);
     while (!stoken.stop_requested()) {
@@ -89,7 +94,7 @@ void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_tok
     }
 }
 
-void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token& stoken) {
+void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token stoken) {
     types::Trade tr;
     static constinit auto msg_size = sizeof(uint8_t) + sizeof(types::Trade);
     while (!stoken.stop_requested()) {
@@ -110,7 +115,7 @@ void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token& st
     }
 }
 
-void Disseminator::run_control_plane(std::stop_token& stoken) {
+void Disseminator::run_control_plane(std::stop_token stoken) {
     while (!stoken.stop_requested()) {
         zmq::message_t request;
         if (auto res = rep_socket_.recv(request, zmq::recv_flags::none)) {
