@@ -41,8 +41,8 @@ private:
     std::jthread control_thread_; // for TCP req/rep
 
     zmq::context_t context_;
-    zmq::socket_t pub_socket_; // Data Plane (Multicast)
-    zmq::socket_t rep_socket_; // Control Plane (TCP)
+    zmq::socket_t pub_socket_; // data plane (multicast)
+    zmq::socket_t rep_socket_; // control plane (tcp)
 
     // ZMQ sockets are NOT thread-safe, since we have multiple worker threads writing to one PUB socket we need a lock.
     std::mutex pub_mutex_;

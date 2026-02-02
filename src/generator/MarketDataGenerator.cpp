@@ -85,13 +85,13 @@ void MarketDataGenerator::generation_loop(const std::stop_token &stop_tok) {
                 types::Quote quote = generate_quote(symbol);
 
                 while (!stop_tok.stop_requested() && !quote_queue_.push(quote)) {
-                    std::this_thread::yield(); // TODO should consider changing this to not burn CPU cycls
+                    std::this_thread::yield(); // TODO: yield deschedules the thread, not sure we want this when its empty. Could have it spinning too. TBD
                     if (stop_tok.stop_requested()) return;
                 }
             } else {
                 types::Trade trade = generate_trade(symbol);
                 while (!stop_tok.stop_requested() && !trade_queue_.push(trade)) {
-                    std::this_thread::yield();
+                    std::this_thread::yield(); // TODO: same here
                     if (stop_tok.stop_requested()) return;
                 }
             }
