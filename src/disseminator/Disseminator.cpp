@@ -110,7 +110,7 @@ void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token& st
     }
 }
 
-void Disseminator::run_control_plane(std::stop_token stoken) {
+void Disseminator::run_control_plane(std::stop_token& stoken) {
     while (!stoken.stop_requested()) {
         zmq::message_t request;
         if (auto res = rep_socket_.recv(request, zmq::recv_flags::none)) {

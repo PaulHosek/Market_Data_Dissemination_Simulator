@@ -32,7 +32,7 @@ private:
     void consume_trades(types::QueueType_Trade& q, std::stop_token& stoken);
 
     // New: Handle TCP subscription requests
-    void run_control_plane(std::stop_token stoken);
+    void run_control_plane(std::stop_token& stoken);
 
     types::QueueType_Trade& trades_;
     types::QueueType_Quote& quotes_;
