@@ -85,8 +85,6 @@ void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_tok
                 std::lock_guard<std::mutex> lock(pub_mutex_);
                 pub_socket_.send(msg, zmq::send_flags::none);
             }
-        } else {
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
 }
@@ -108,8 +106,6 @@ void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token sto
                 std::lock_guard<std::mutex> lock(pub_mutex_);
                 pub_socket_.send(msg, zmq::send_flags::none);
             }
-        } else {
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
 }
