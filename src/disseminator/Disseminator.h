@@ -29,7 +29,7 @@ public:
 private:
     void process() override;
     void consume_quotes(types::QueueType_Quote& q, const std::stop_token& stoken);
-    void consume_trades(types::QueueType_Trade& q, std::stop_token stoken);
+    void consume_trades(types::QueueType_Trade& q, std::stop_token& stoken);
 
     // New: Handle TCP subscription requests
     void run_control_plane(std::stop_token stoken);

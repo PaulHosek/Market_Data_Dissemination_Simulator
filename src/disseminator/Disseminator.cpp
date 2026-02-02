@@ -34,7 +34,7 @@ Disseminator::Disseminator(types::QueueType_Quote& quotes,
 }
 
 Disseminator::~Disseminator() {
-    stop();
+    Disseminator::stop();
 }
 
 void Disseminator::start() {
@@ -70,9 +70,9 @@ void Disseminator::process() {
 
 void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_token& stoken) {
     types::Quote qt;
+    static constinit auto msg_size = sizeof(uint8_t) + sizeof(types::Quote);
     while (!stoken.stop_requested()) {
         if (q.pop(qt)) {
-            size_t msg_size = sizeof(uint8_t) + sizeof(types::Quote);
             zmq::message_t msg(msg_size);
 
             uint8_t type = 0;
@@ -89,11 +89,11 @@ void Disseminator::consume_quotes(types::QueueType_Quote& q, const std::stop_tok
     }
 }
 
-void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token stoken) {
+void Disseminator::consume_trades(types::QueueType_Trade& q, std::stop_token& stoken) {
     types::Trade tr;
+    static constinit auto msg_size = sizeof(uint8_t) + sizeof(types::Trade);
     while (!stoken.stop_requested()) {
         if (q.pop(tr)) {
-            size_t msg_size = sizeof(uint8_t) + sizeof(types::Trade);
             zmq::message_t msg(msg_size);
 
             uint8_t type = 1;
@@ -127,5 +127,5 @@ void Disseminator::run_control_plane(std::stop_token stoken) {
 
 
 
-// TODO specific case first with 1 queueue type, then convert using template and concept or compile type polymorphism
+// TODO specific case first with 1 queue type, then convert using template and concept or compile type polymorphism
 
