@@ -105,7 +105,7 @@ void MarketDataGenerator::generation_loop(const std::stop_token &stop_tok) {
 
 /**
  * Generates a quote struct and fills it with values matching the random walk of a symbol.
- * Symbols are all initialised at 100 for now
+ * Symbols are all initialised at 100 for now.
  ***/
 types::Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
     const auto idx{std::distance(symbols_.begin(), std::ranges::find(symbols_, symbol))};
