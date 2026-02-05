@@ -10,7 +10,6 @@
 
 #include <string_view>
 #include <unordered_set>
-#include <vector>
 #include <thread>
 #include <stop_token>
 #include <zmq.hpp>
@@ -34,7 +33,7 @@ private:
     zmq::context_t context_;
     zmq::socket_t multicast_sub_;
     zmq::socket_t tcp_req_;
-    std::unordered_set<const std::string> subscriptions_; // TODO: surely we can do better, this has poor memory locality
+    std::unordered_set<std::string> subscriptions_; // TODO: surely we can do better, this has poor memory locality
     std::jthread receiver_thread_;
     std::stop_source stop_source_;
 
