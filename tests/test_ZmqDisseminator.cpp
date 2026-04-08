@@ -11,10 +11,6 @@
 #include "../src/utils/types.h"
 #include "../src/utils/WaitableSpscQueue.h"
 
-// ==========================================
-// 1. MOCK CLASS FOR PURE UNIT TESTS
-// ==========================================
-// This tests the unwrapping and routing logic WITHOUT touching the network
 template <typename MarketDataQueue>
 class MockDisseminator final : public IDisseminator<MockDisseminator<MarketDataQueue>, MarketDataQueue> {
 public:
@@ -40,7 +36,7 @@ protected:
     size_t count_remaining_messages() {
         size_t count = 0;
         types::MarketDataMsg msg;
-        // Since it's a test, we don't want to block, so we use stop_token
+        //  we don't want to block since this is a test
         std::stop_source ss;
         ss.request_stop();
         while (queue_.pop(msg, ss.get_token())) count++;

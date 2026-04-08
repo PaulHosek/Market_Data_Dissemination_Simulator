@@ -17,7 +17,7 @@ public:
           rng_(std::random_device{}()) {}
 
     void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file) {
-        this->set_rate(messages_per_second); // Set the rate in the base class
+        this->set_rate(messages_per_second);
         symbols_ = read_symbols_file(symbols_file);
         
         if (symbols_.empty()) throw std::logic_error("Symbols file empty or invalid.");
@@ -26,7 +26,6 @@ public:
         spdlog::info("RandomWalkGenerator configured: {} msgs/sec, {} symbols", messages_per_second, symbols_.size());
     }
 
-    // Statically called by BaseGenerator's loop
     inline types::MarketDataMsg generate_msg_impl() {
         std::uniform_int_distribution<size_t> symbol_distr(0, symbols_.size() - 1);
         std::uniform_int_distribution<uint8_t> type_dist(0, 1);

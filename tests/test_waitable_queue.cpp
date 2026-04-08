@@ -4,10 +4,8 @@
 #include <atomic>
 #include <vector>
 
-// Adjust this path to wherever your WaitableSpscQueue is located
 #include "../src/utils/WaitableSpscQueue.h"
 
-// We use a tiny capacity so we can easily test the "full" state
 constexpr size_t TEST_CAPACITY = 10;
 using TestQueue = WaitableSpscQueue<int, TEST_CAPACITY>;
 
@@ -16,18 +14,12 @@ protected:
     TestQueue queue_;
 };
 
-// ==========================================
-// 1. Single-Threaded Logic Tests
-// ==========================================
-
 TEST_F(WaitableQueueTest, BasicPushPop) {
     EXPECT_TRUE(queue_.empty());
 
-    // Push an item
     EXPECT_TRUE(queue_.push(42));
     EXPECT_FALSE(queue_.empty());
 
-    // Pop the item
     int item = 0;
     std::stop_source ss;
     EXPECT_TRUE(queue_.pop(item, ss.get_token()));
@@ -37,12 +29,10 @@ TEST_F(WaitableQueueTest, BasicPushPop) {
 }
 
 TEST_F(WaitableQueueTest, PushFailsWhenAtCapacity) {
-    // Fill the queue to its maximum capacity
     for (int i = 0; i < TEST_CAPACITY; i++) {
         EXPECT_TRUE(queue_.push(i));
     }
 
-    // The very next push should instantly return false
     EXPECT_FALSE(queue_.push(99));
 }
 
@@ -50,23 +40,18 @@ TEST_F(WaitableQueueTest, PopReturnsFalseIfAlreadyStopped) {
     int item = 0;
     std::stop_source ss;
 
-    // Stop the token before we even try to pop
     ss.request_stop();
 
     // Because the queue is empty and the token is stopped, it must return false
     EXPECT_FALSE(queue_.pop(item, ss.get_token()));
 }
 
-// ==========================================
-// 2. Multi-Threaded Concurrency Tests
-// ==========================================
 
 TEST_F(WaitableQueueTest, ConsumerWakesUpWhenDataPushed) {
     std::stop_source ss;
     std::atomic<int> received_value{0};
 
-    // 1. Start a consumer thread. It will immediately go to sleep
-    // because the queue is empty.
+    // go to sleep immediately because queue empty
     std::jthread consumer([&](std::stop_token st) {
         int item = 0;
         if (queue_.pop(item, st)) {
@@ -74,14 +59,12 @@ TEST_F(WaitableQueueTest, ConsumerWakesUpWhenDataPushed) {
         }
     });
 
-    // Give the consumer a tiny bit of time to hit the wait() state
+    // force wait state
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    EXPECT_EQ(received_value.load(), 0); // Ensure it's still waiting
+    EXPECT_EQ(received_value.load(), 0); // test it's still waiting
 
-    // 2. Push data. This should trigger `notify_one()` and wake the consumer.
-    queue_.push(100);
+    queue_.push(100);// This should trigger `notify_one()` and wake the consumer.
 
-    // Wait for the thread to finish processing
     consumer.join();
 
     EXPECT_EQ(received_value.load(), 100);
@@ -91,7 +74,6 @@ TEST_F(WaitableQueueTest, ConsumerWakesUpOnStopRequest) {
     std::stop_source ss;
     std::atomic<bool> pop_returned_false{false};
 
-    // 1. Consumer goes to sleep on an empty queue
     std::jthread consumer([&]() {
         int item = 0;
         if (!queue_.pop(item, ss.get_token())) {
@@ -101,8 +83,6 @@ TEST_F(WaitableQueueTest, ConsumerWakesUpOnStopRequest) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-    // 2. We never push data. Instead, we request a stop.
-    // This tests that your `std::stop_callback` successfully calls `notify_all()`.
     ss.request_stop();
 
     consumer.join();

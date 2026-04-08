@@ -15,14 +15,10 @@ public:
     }
 
     bool pop(T& item, std::stop_token stoken) {
-        // Pure busy-spin loop. Lowest possible latency, but burns 100% CPU.
         while (!stoken.stop_requested()) {
             if (queue_.pop(item)) {
                 return true;
             }
-            // Optional: You can put a PAUSE instruction or yield here to prevent 
-            // the CPU from thermally throttling, but true zero-latency skips this.
-            // std::this_thread::yield(); 
         }
         return false;
     }
@@ -33,4 +29,4 @@ private:
     boost::lockfree::spsc_queue<T, boost::lockfree::capacity<Capacity>> queue_;
 };
 
-#endif // SPIN_SPSC_QUEUE_H
+#endif

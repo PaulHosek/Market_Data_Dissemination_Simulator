@@ -44,6 +44,7 @@ add_executable(generator_tests
         src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
         src/utils/SpinSpscQueue.h
+        tests/test_integration_zmq_disseminator_feedhandler.cpp
 )
 
 target_link_libraries(generator_tests

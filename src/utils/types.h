@@ -19,17 +19,16 @@ namespace types {
         double ask_price;
         uint32_t bid_size;
         uint32_t ask_size;
-        uint64_t enqueue_timestamp; // Added for future latency tracking
+        uint64_t enqueue_timestamp;
     };
 
     struct Trade {
         char symbol[8];
         double price;
         uint32_t size;
-        uint64_t enqueue_timestamp; // Added for future latency tracking
+        uint64_t enqueue_timestamp;
     };
 
-    // The unified market data message
     using MarketDataMsg = std::variant<Quote, Trade>;
     using MarketDataQueue = WaitableSpscQueue<MarketDataMsg, 4096>;
 }

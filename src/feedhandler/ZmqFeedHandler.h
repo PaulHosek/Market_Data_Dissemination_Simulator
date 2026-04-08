@@ -22,7 +22,7 @@ public:
     }
 
     ~ZmqFeedHandler() {
-        // Crucial: We must stop the base class thread BEFORE destroying ZMQ sockets
+        // must stop the base class thread before destroying sockets
         this->stop();
         if (multicast_sub_.handle() != nullptr) {
             multicast_sub_.set(zmq::sockopt::linger, 0);

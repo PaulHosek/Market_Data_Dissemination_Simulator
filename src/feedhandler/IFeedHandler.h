@@ -38,23 +38,27 @@ public:
         static_cast<Derived*>(this)->unsubscribe_impl(symbol);
     }
 
+    void set_quote_callback(std::function<void(const types::Quote&)> cb) { on_quote_ = std::move(cb); }
+    void set_trade_callback(std::function<void(const types::Trade&)> cb) { on_trade_ = std::move(cb); }
+
+
 protected:
     IFeedHandler() = default;
     ~IFeedHandler() = default;
 
-    // Delivery logic is centralized here in the base class
     void deliver_to_client(const types::Quote& quote) {
-        spdlog::info("Delivered quote for {}", std::string_view(quote.symbol, 8));
-        // TODO: Pass to client callback or internal orderbook later
+        if (on_quote_) on_quote_(quote);
     }
 
     void deliver_to_client(const types::Trade& trade) {
-        spdlog::info("Delivered trade for {}", std::string_view(trade.symbol, 8));
-        // TODO: Pass to client callback or internal orderbook later
+        if (on_trade_) on_trade_(trade);
     }
+
 
 private:
     std::jthread receiver_thread_;
+    std::function<void(const types::Quote&)> on_quote_;
+    std::function<void(const types::Trade&)> on_trade_;
 };
 
-#endif //IFEEDHANDLER_H
+#endif
