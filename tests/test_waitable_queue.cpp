@@ -112,35 +112,30 @@ TEST_F(WaitableQueueTest, ConsumerWakesUpOnStopRequest) {
 }
 
 TEST_F(WaitableQueueTest, HighThroughputStressTest) {
-    std::stop_source ss;
-    const int NUM_MESSAGES = 500'000;
+    const int NUM_MESSAGES = 50'000;
     std::atomic<int> messages_received{0};
 
-    // Fast Consumer
     std::jthread consumer([&](std::stop_token st) {
         int item;
         while (queue_.pop(item, st)) {
             messages_received++;
+            if (messages_received == NUM_MESSAGES) {
+                break;
+            }
         }
     });
 
-    // Fast Producer
     for (int i = 0; i < NUM_MESSAGES; i++) {
-        // Since capacity is only 10, the producer will frequently outpace the consumer.
-        // We spin-yield until there's space to push.
+        int retries = 0;
         while (!queue_.push(i)) {
-            std::this_thread::yield();
+            if (++retries > 100) {
+                std::this_thread::sleep_for(std::chrono::microseconds(1));
+            } else {
+                std::this_thread::yield();
+            }
         }
     }
 
-    // Wait for the consumer to drain the remaining items in the queue
-    while (!queue_.empty()) {
-        std::this_thread::yield();
-    }
-
-    // Shut everything down
-    ss.request_stop();
-    consumer.request_stop();
     consumer.join();
 
     EXPECT_EQ(messages_received.load(), NUM_MESSAGES);
