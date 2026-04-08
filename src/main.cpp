@@ -7,9 +7,9 @@
 
 
 #include "utils/types.h"
-#include "generator/MarketDataGenerator.h"
+#include "generator/RandomWalkGenerator.h"
 #include "disseminator/ZmqDisseminator.h"
-#include "feedhandler/FeedHandler.h"
+#include "feedhandler/ZmqFeedHandler.h"
 
 int main() {
     // using namespace std::chrono_literals;
@@ -34,7 +34,7 @@ int main() {
 
     // 3. Instantiate the architecture components
     ZmqDisseminator<types::MarketDataQueue> disseminator(queue, zmq_address);
-    MarketDataGenerator generator(queue);
+    RandomWalkGenerator generator(queue);
     ZmqFeedHandler subscriber(zmq_address);
 
     // 4. Configure the system

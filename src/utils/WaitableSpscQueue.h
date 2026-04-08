@@ -50,7 +50,7 @@ public:
         return false;
     }
     
-    [[nodiscard]] bool empty() const { return queue_.empty(); }
+    [[nodiscard]] bool empty() { return queue_.empty(); }
 };
 
 #endif //WAITABLESPSCQUEUE_H

@@ -20,9 +20,9 @@ include_directories(src)
 # --- Main Executable ---
 add_executable(main_simulate
         src/main.cpp
-        src/feedhandler/FeedHandler.h
+        src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
-        src/generator/MarketDataGenerator.cpp
+        src/generator/RandomWalkGenerator.h
 )
 
 target_link_libraries(main_simulate
@@ -36,13 +36,14 @@ enable_testing()
 
 add_executable(generator_tests
         tests/test_sanity_basic.cpp
-        tests/test_generator.cpp
+        tests/test_RandomWalkGenerator.cpp
         tests/test_waitable_queue.cpp
-        tests/test_disseminator.cpp
-        tests/test_subscriber_interface.cpp
-        src/generator/MarketDataGenerator.cpp
-        src/feedhandler/FeedHandler.h
+        tests/test_ZmqDisseminator.cpp
+        tests/test_ZmqFeedhandler.cpp
+        src/generator/RandomWalkGenerator.h
+        src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
+        src/utils/SpinSpscQueue.h
 )
 
 target_link_libraries(generator_tests
@@ -55,7 +56,7 @@ target_link_libraries(generator_tests
 gtest_discover_tests(generator_tests)
 
 set_source_files_properties(
-        src/generator/IGenerator.h
+        src/generator/BaseGenerator.h
         src/utils/types.h
         PROPERTIES HEADER_FILE_ONLY TRUE
 )
