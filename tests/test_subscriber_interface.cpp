@@ -9,7 +9,7 @@
 #include <zmq_addon.hpp>
 #include <spdlog/spdlog.h>
 #include <memory> // For std::unique_ptr
-#include "../src/subscriber/SubscriberInterface.h"
+#include "../src/feedhandler/FeedHandler.h"
 #include "utils/types.h"
 
 class SubscriberInterfaceTest : public ::testing::Test {
@@ -17,23 +17,18 @@ protected:
     zmq::context_t context_;
     zmq::socket_t mock_multicast_pub_;
     zmq::socket_t mock_tcp_rep_;
-    std::unique_ptr<SubscriberInterface> subscriber_;
+    std::unique_ptr<FeedHandler> subscriber_;
 
     void SetUp() override {
         context_ = zmq::context_t(1);
         mock_multicast_pub_ = zmq::socket_t(context_, zmq::socket_type::pub);
         mock_multicast_pub_.bind("inproc://multicast_test");
 
-        mock_tcp_rep_ = zmq::socket_t(context_, zmq::socket_type::rep);
-        mock_tcp_rep_.bind("inproc://tcp_test");
-
         zmq::socket_t mock_multicast_sub(context_, zmq::socket_type::sub);
         mock_multicast_sub.connect("inproc://multicast_test");
 
-        zmq::socket_t mock_tcp_req(context_, zmq::socket_type::req);
-        mock_tcp_req.connect("inproc://tcp_test");
 
-        subscriber_ = std::make_unique<SubscriberInterface>(std::move(mock_multicast_sub), std::move(mock_tcp_req));
+        subscriber_ = std::make_unique<FeedHandler>(std::move(mock_multicast_sub));
     }
 
     void TearDown() override {
@@ -42,7 +37,7 @@ protected:
 };
 
 TEST_F(SubscriberInterfaceTest, ConstructorSetsUpSockets) {
-    EXPECT_NO_THROW(SubscriberInterface(std::string_view{"inproc://multicast"}, std::string_view{"inproc://tcp"}));
+    EXPECT_NO_THROW(FeedHandler(std::string_view{"inproc://multicast"}));
 }
 
 TEST_F(SubscriberInterfaceTest, SubscribeSendsRequest) {

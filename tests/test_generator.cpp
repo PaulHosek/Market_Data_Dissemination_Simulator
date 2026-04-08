@@ -152,7 +152,6 @@ TEST_F(MarketDataGeneratorTest, test_valid_data) {
 
 TEST_F(MarketDataGeneratorTest, approximate_message_rate) {
     using namespace std::chrono_literals;
-    // TODO add different sizes to this test to test
     generator_->configure(1000, test_file_path);
     generator_->start();
     std::this_thread::sleep_for(1s);

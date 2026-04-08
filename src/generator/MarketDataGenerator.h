@@ -19,33 +19,14 @@
 // Generator pushes values onto two queues for trades and quotes
 class MarketDataGenerator : public IGenerator{
 public:
-
-    MarketDataGenerator(types::QueueType_Quote& quote_queue, types::QueueType_Trade& trade_queue);
+    explicit MarketDataGenerator(types::MarketDataQueue& queue);
     void configure(uint32_t messages_per_second, const std::filesystem::path &symbols_file) override;
 
     void start() override;
 
     void stop() override;
 
-
 private:
-
-    // TODO using a vector makes search inefficient, but let's see if it makes a difference when we are done
-    // since its strings, they should be on the heap anyways so we just need a pointer-stable structure here
-    std::vector<std::string> symbols_;
-    uint32_t messages_per_sec_;
-    std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set + threadlocal?
-    std::chrono::nanoseconds interval_;
-
-    types::QueueType_Quote& quote_queue_;
-    types::QueueType_Trade& trade_queue_;
-
-    std::jthread generating_thread_;
-    std::vector<double> current_prices_;
-    std::stop_source stop_source_;
-    static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
-
-
     //Note:
     //1. initialise distribution (for choice quote/trade and symbol) & clock
     //2. while running
@@ -66,7 +47,25 @@ private:
     // think about what we may want to set as parameters later or maybe inherit from some configuration object
     types::Trade generate_trade(std::string const& symbol);
 
-    // TODO: Not sure if I should mark private methods somehow (e.g., __function)
+private:
+
+    // TODO using a vector makes search inefficient, but let's see if it makes a difference when we are done
+    // since its strings, they should be on the heap anyways so we just need a pointer-stable structure here
+    std::vector<std::string> symbols_;
+    uint32_t messages_per_sec_;
+    std::mt19937 rng_; // TODO maybe we can make this std::variant for mt19937 or uint for the set + threadlocal?
+    std::chrono::nanoseconds interval_;
+
+    types::MarketDataQueue& queue_;
+
+    std::jthread generating_thread_;
+    std::vector<double> current_prices_;
+    std::stop_source stop_source_;
+    static std::vector<std::string> read_symbols_file(std::filesystem::path const& filename);
+
+
+
+
 };
 
 

@@ -11,12 +11,11 @@
 #include "spdlog/spdlog.h"
 #include <stop_token>
 
-MarketDataGenerator::MarketDataGenerator(types::QueueType_Quote& quote_queue, types::QueueType_Trade& trade_queue)
+MarketDataGenerator::MarketDataGenerator(types::MarketDataQueue& queue)
     : messages_per_sec_(0),
       rng_(std::random_device{}()),
       interval_(0),
-      quote_queue_(quote_queue),
-      trade_queue_(trade_queue),
+      queue_(queue),
       stop_source_() {
 }
 
@@ -36,7 +35,6 @@ void MarketDataGenerator::start() {
     if (messages_per_sec_ == 0 || symbols_.empty()) {
         throw std::logic_error("Generator has not been configured. Call configure first.");
     }
-    // TODO double check this, it may join the thread just after constructing it
     generating_thread_ = std::jthread{[this](){generation_loop(stop_source_.get_token());}};
 }
 
@@ -46,16 +44,6 @@ void MarketDataGenerator::stop() {
 }
 
 
-/**
- * Reads a list of stock tickers from a file.
- * Each ticker is expected to be on a separate line, with a maximum length of 8 characters.
- *
- * @param filename The path to the file containing the tickers.
- * @return A vector of strings representing the stock tickers.
- *
- * Note: This implementation uses std::ifstream for file reading.
- * Using a memory-mapped file (MMF) is an alternative approach for large files.
- */
 std::vector<std::string> MarketDataGenerator::read_symbols_file(std::filesystem::path const &filename) {
     std::vector<std::string> tickers;
     std::ifstream file(filename);
@@ -81,18 +69,24 @@ void MarketDataGenerator::generation_loop(const std::stop_token &stop_tok) {
         if (auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time); elapsed >= interval_) {
             const std::size_t idx = symbol_distr(rng_);
             const std::string& symbol = symbols_[idx];
+
             if (type_dist(rng_)) {
                 types::Quote quote = generate_quote(symbol);
 
-                while (!stop_tok.stop_requested() && !quote_queue_.push(quote)) {
-                    std::this_thread::yield(); // TODO: yield deschedules the thread, not sure we want this when its empty. Could have it spinning too. TBD
-                    if (stop_tok.stop_requested()) return;
+                quote.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+                while (!stop_tok.stop_requested() && !queue_.push(quote)) {
+                    std::this_thread::yield();
                 }
             } else {
                 types::Trade trade = generate_trade(symbol);
-                while (!stop_tok.stop_requested() && !trade_queue_.push(trade)) {
-                    std::this_thread::yield(); // TODO: same here
-                    if (stop_tok.stop_requested()) return;
+
+                trade.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+                while (!stop_tok.stop_requested() && !queue_.push(trade)) {
+                    std::this_thread::yield();
                 }
             }
             previous_time = now;
@@ -122,7 +116,7 @@ types::Quote MarketDataGenerator::generate_quote(std::string const &symbol) {
     next_quote.ask_price = price + bid_ask_spread / 2;
     next_quote.bid_size = quote_size(rng_);
     next_quote.ask_size = quote_size(rng_);
-    next_quote.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+    next_quote.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
 
     return next_quote;
@@ -139,8 +133,8 @@ types::Trade MarketDataGenerator::generate_trade(std::string const &symbol) {
     types::Trade next_trade{};
     std::strncpy(next_trade.symbol, symbol.c_str(), sizeof(next_trade.symbol) - 1);
     next_trade.price = price;
-    next_trade.volume = trade_size(rng_);
-    next_trade.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+    next_trade.size = trade_size(rng_);
+    next_trade.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
 
 

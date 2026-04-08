@@ -26,17 +26,15 @@ protected:
         disseminator_ = std::make_unique<Disseminator>(
             quote_queue_,
             trade_queue_,
-            MULTICAST_ADDR,
-            TCP_ADDR
+            MULTICAST_ADDR
         );
 
-        // Prepare test sockets
         sub_socket_.connect(MULTICAST_ADDR);
         sub_socket_.set(zmq::sockopt::subscribe, "");
         sub_socket_.set(zmq::sockopt::rcvtimeo, 1000);
 
-        req_socket_.connect(TCP_ADDR);
-        req_socket_.set(zmq::sockopt::rcvtimeo, 1000);
+        // req_socket_.connect(TCP_ADDR);
+        // req_socket_.set(zmq::sockopt::rcvtimeo, 1000);
     }
 
     void TearDown() override {
@@ -44,7 +42,7 @@ protected:
             disseminator_->stop();
         }
         sub_socket_.close();
-        req_socket_.close();
+        // req_socket_.close();
     }
 
     // Helper from old tests

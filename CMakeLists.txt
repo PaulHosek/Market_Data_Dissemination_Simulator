@@ -9,7 +9,6 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
-
 find_package(Boost REQUIRED COMPONENTS lockfree)
 find_package(spdlog REQUIRED)
 find_package(GTest REQUIRED)
@@ -18,13 +17,11 @@ find_package(cppzmq CONFIG REQUIRED)
 include_directories(include)
 include_directories(src)
 
+# --- Main Executable ---
 add_executable(main_simulate
         src/main.cpp
-        src/disseminator/Disseminator.cpp
         src/generator/MarketDataGenerator.cpp
-        src/disseminator/Disseminator.cpp
-        src/utils/WaitableSpscQueue.cpp
-        src/utils/WaitableSpscQueue.h
+        src/feedhandler/FeedHandler.cpp
 )
 
 target_link_libraries(main_simulate
@@ -33,25 +30,18 @@ target_link_libraries(main_simulate
         PRIVATE cppzmq
 )
 
+# --- Tests ---
 enable_testing()
 
 add_executable(generator_tests
         tests/test_sanity_basic.cpp
-        src/generator/MarketDataGenerator.cpp
         tests/test_generator.cpp
-        src/utils/types.h
-        src/disseminator/Disseminator.cpp
-        src/disseminator/Disseminator.h
-        src/disseminator/IDisseminator.h
-        src/utils/WaitableSpscQueue.cpp
-        src/utils/WaitableSpscQueue.h
         tests/test_waitable_queue.cpp
         tests/test_disseminator.cpp
         tests/test_subscriber_interface.cpp
-        src/subscriber/SubscriberInterface.cpp
-        src/subscriber/SubscriberInterface.h
         tests/test_integration_disseminator_subscriberInterface.cpp
-        #        src/types.h
+        src/generator/MarketDataGenerator.cpp
+        src/feedhandler/FeedHandler.cpp
 )
 
 target_link_libraries(generator_tests
@@ -61,17 +51,10 @@ target_link_libraries(generator_tests
         PRIVATE cppzmq
 )
 
-# Add tests to CTest
 gtest_discover_tests(generator_tests)
 
 set_source_files_properties(
         src/generator/IGenerator.h
-        src/types.h
+        src/utils/types.h
         PROPERTIES HEADER_FILE_ONLY TRUE
 )
-
-
-
-
-
-
