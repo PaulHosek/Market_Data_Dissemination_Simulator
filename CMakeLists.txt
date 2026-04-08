@@ -20,8 +20,9 @@ include_directories(src)
 # --- Main Executable ---
 add_executable(main_simulate
         src/main.cpp
+        src/feedhandler/FeedHandler.h
+        src/disseminator/ZmqDisseminator.h
         src/generator/MarketDataGenerator.cpp
-        src/feedhandler/FeedHandler.cpp
 )
 
 target_link_libraries(main_simulate
@@ -39,9 +40,9 @@ add_executable(generator_tests
         tests/test_waitable_queue.cpp
         tests/test_disseminator.cpp
         tests/test_subscriber_interface.cpp
-        tests/test_integration_disseminator_subscriberInterface.cpp
         src/generator/MarketDataGenerator.cpp
-        src/feedhandler/FeedHandler.cpp
+        src/feedhandler/FeedHandler.h
+        src/disseminator/ZmqDisseminator.h
 )
 
 target_link_libraries(generator_tests

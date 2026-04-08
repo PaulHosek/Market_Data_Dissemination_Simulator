@@ -35,7 +35,7 @@ int main() {
     // 3. Instantiate the architecture components
     ZmqDisseminator<types::MarketDataQueue> disseminator(queue, zmq_address);
     MarketDataGenerator generator(queue);
-    FeedHandler subscriber(zmq_address);
+    ZmqFeedHandler subscriber(zmq_address);
 
     // 4. Configure the system
     generator.configure(1500, "../data/tickers.txt");
