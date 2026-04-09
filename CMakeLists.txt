@@ -48,6 +48,7 @@ add_executable(generator_tests
         src/monitor/LatencyMonitor.h
         src/utils/CustomSpscQueue.h
         src/utils/QueueConcepts.h
+        src/disseminator/UdpDisseminator.h
 )
 
 target_link_libraries(generator_tests

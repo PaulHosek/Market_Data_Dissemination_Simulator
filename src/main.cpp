@@ -37,8 +37,8 @@ int main() {
 
     std::string zmq_address = "tcp://127.0.0.1:5555";
 
-    ZmqDisseminator<decltype(safe_queue)> disseminator(safe_queue, zmq_address);
-    RandomWalkGenerator<decltype(safe_queue)> generator(safe_queue);
+    ZmqDisseminator<decltype(fast_queue)> disseminator(fast_queue, zmq_address);
+    RandomWalkGenerator<decltype(fast_queue)> generator(fast_queue);
     ZmqFeedHandler feed_handler(zmq_address);
 
     LatencyMonitor monitor(500'000);

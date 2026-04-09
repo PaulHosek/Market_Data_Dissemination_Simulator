@@ -17,7 +17,6 @@ public:
     void start() {
         if (!receiver_thread_.joinable()) {
             receiver_thread_ = std::jthread([this](std::stop_token st) {
-                // CRTP Call: Dispatch to the derived class's network loop
                 static_cast<Derived*>(this)->receive_loop_impl(std::move(st));
             });
         }
