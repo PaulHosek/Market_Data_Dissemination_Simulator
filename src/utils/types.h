@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <cstring>
 #include <variant>
-#include "WaitableSpscQueue.h"
 
 namespace types {
     struct Quote {
@@ -32,7 +31,7 @@ namespace types {
     };
 
     using MarketDataMsg = std::variant<Quote, Trade>;
-    using MarketDataQueue = WaitableSpscQueue<MarketDataMsg, 4096>;
+    // using MarketDataQueue = WaitableSpscQueue<MarketDataMsg, 4096>;
 }
 
 

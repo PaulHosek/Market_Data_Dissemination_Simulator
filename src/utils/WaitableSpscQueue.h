@@ -1,7 +1,6 @@
 #ifndef WAITABLESPSCQUEUE_H
 #define WAITABLESPSCQUEUE_H
 
-#include <boost/lockfree/spsc_queue.hpp>
 #include <atomic>
 #include <stop_token>
 

@@ -1,9 +1,7 @@
 #ifndef SPIN_SPSC_QUEUE_H
 #define SPIN_SPSC_QUEUE_H
 
-#include <boost/lockfree/spsc_queue.hpp>
 #include <stop_token>
-#include <thread>
 #include "QueueConcepts.h"
 
 template<typename T, typename UnderlyingQueue_T>

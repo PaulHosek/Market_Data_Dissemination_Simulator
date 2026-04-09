@@ -14,15 +14,15 @@ since i know that there is only 1 producer and one consumer, and the read_ point
 
 
 template <typename T, std::size_t Capacity>
-class MyLockFreeQueue {
+class CustomSpscQueue {
 public:
     static constexpr std::size_t RealCapacity = Capacity;
 
-    MyLockFreeQueue() {
+    CustomSpscQueue() {
         data_ = std::allocator<T>{}.allocate(RealCapacity);
     }
 
-    ~MyLockFreeQueue() {
+    ~CustomSpscQueue() {
         std::size_t r = read_.load(std::memory_order_relaxed);
         std::size_t w = write_.load(std::memory_order_relaxed);
         while (r < w) {
@@ -58,6 +58,10 @@ public:
         std::destroy_at(data_ + idx);
         read_.store(r + 1, std::memory_order_release);
         return true;
+    }
+
+    [[nodiscard]] bool empty() const {
+        return read_.load(std::memory_order_acquire) == write_.load(std::memory_order_acquire);
     }
 
 private:

@@ -46,7 +46,7 @@ add_executable(generator_tests
         src/utils/SpinSpscQueue.h
         tests/test_integration_zmq_disseminator_feedhandler.cpp
         src/monitor/LatencyMonitor.h
-        src/utils/CustomSPSCQ.h
+        src/utils/CustomSpscQueue.h
         src/utils/QueueConcepts.h
 )
 

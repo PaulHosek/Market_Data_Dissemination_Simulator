@@ -13,19 +13,32 @@
 #include "utils/WaitableSpscQueue.h"
 #include "monitor/LatencyMonitor.h" // <-- Include the new monitor
 
+#include <boost/lockfree/spsc_queue.hpp>
+#include "utils/CustomSpscQueue.h"
+#include "utils/SpinSpscQueue.h"
+
 int main() {
+    using MsgType = types::MarketDataMsg;
+    constexpr size_t Cap = 8192;
+
+    // options in queus
+    using BoostStorage = boost::lockfree::spsc_queue<MsgType, boost::lockfree::capacity<Cap>>;
+    WaitableSpscQueue<MsgType, BoostStorage> safe_queue;
+    using MyStorage = CustomSpscQueue<MsgType, Cap>;
+    SpinSpscQueue<MsgType, MyStorage> fast_queue;
+
     std::cout << "--- Starting Latency Benchmark ---\n";
+
 
     const std::string symbols_file = "test_symbols.txt";
     std::ofstream out(symbols_file);
     out << "AAPL\nMSFT\nGOOG\n";
     out.close();
 
-    WaitableSpscQueue<types::MarketDataMsg, 8192> queue;
     std::string zmq_address = "tcp://127.0.0.1:5555";
 
-    ZmqDisseminator<WaitableSpscQueue<types::MarketDataMsg, 8192>> disseminator(queue, zmq_address);
-    RandomWalkGenerator<WaitableSpscQueue<types::MarketDataMsg, 8192>> generator(queue);
+    ZmqDisseminator<decltype(safe_queue)> disseminator(safe_queue, zmq_address);
+    RandomWalkGenerator<decltype(safe_queue)> generator(safe_queue);
     ZmqFeedHandler feed_handler(zmq_address);
 
     LatencyMonitor monitor(500'000);
