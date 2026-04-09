@@ -16,59 +16,71 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include "utils/CustomSpscQueue.h"
 #include "utils/SpinSpscQueue.h"
+#include <utils/config.h>
+#include <feedhandler/UdpFeedhandler.h>
+#include <disseminator/UdpDisseminator.h>
 
-int main() {
-    using MsgType = types::MarketDataMsg;
-    constexpr size_t Cap = 8192;
-
-    // options in queus
-    using BoostStorage = boost::lockfree::spsc_queue<MsgType, boost::lockfree::capacity<Cap>>;
-    WaitableSpscQueue<MsgType, BoostStorage> safe_queue;
-    using MyStorage = CustomSpscQueue<MsgType, Cap>;
-    SpinSpscQueue<MsgType, MyStorage> fast_queue;
-
-    std::cout << "--- Starting Latency Benchmark ---\n";
+using StorageT = boost::lockfree::spsc_queue<types::MarketDataMsg, boost::lockfree::capacity<65536>>;
 
 
-    const std::string symbols_file = "test_symbols.txt";
-    std::ofstream out(symbols_file);
-    out << "AAPL\nMSFT\nGOOG\n";
-    out.close();
 
-    std::string zmq_address = "tcp://127.0.0.1:5555";
-
-    ZmqDisseminator<decltype(fast_queue)> disseminator(fast_queue, zmq_address);
-    RandomWalkGenerator<decltype(fast_queue)> generator(fast_queue);
-    ZmqFeedHandler feed_handler(zmq_address);
-
-    LatencyMonitor monitor(500'000);
-
-    feed_handler.set_quote_callback([&monitor](const types::Quote& q) {
-        monitor.on_quote(q);
-    });
-    feed_handler.set_trade_callback([&monitor](const types::Trade& t) {
-        monitor.on_trade(t);
-    });
-
-    generator.configure(50'000, symbols_file);
-    feed_handler.subscribe("AAPL");
-    feed_handler.subscribe("MSFT");
-    feed_handler.subscribe("GOOG");
-
-    feed_handler.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    disseminator.start();
-    generator.start();
-
-    std::cout << "Running benchmark for 5 seconds...\n";
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-
-    std::cout << "Shutting down...\n";
-    generator.stop();
-    disseminator.stop();
-    feed_handler.stop();
+int main(int argc, char* argv[]) {
 
     return 0;
+}
+
+// int main() {
+    // using MsgType = types::MarketDataMsg;
+    // constexpr size_t Cap = 8192;
+    //
+    // // options in queus
+    // using BoostStorage = boost::lockfree::spsc_queue<MsgType, boost::lockfree::capacity<Cap>>;
+    // WaitableSpscQueue<MsgType, BoostStorage> safe_queue;
+    // using MyStorage = CustomSpscQueue<MsgType, Cap>;
+    // SpinSpscQueue<MsgType, MyStorage> fast_queue;
+    //
+    // std::cout << "--- Starting Latency Benchmark ---\n";
+    //
+    //
+    // const std::string symbols_file = "test_symbols.txt";
+    // std::ofstream out(symbols_file);
+    // out << "AAPL\nMSFT\nGOOG\n";
+    // out.close();
+    //
+    // std::string zmq_address = "tcp://127.0.0.1:5555";
+    //
+    // ZmqDisseminator<decltype(fast_queue)> disseminator(fast_queue, zmq_address);
+    // RandomWalkGenerator<decltype(fast_queue)> generator(fast_queue);
+    // ZmqFeedHandler feed_handler(zmq_address);
+    //
+    // LatencyMonitor monitor(500'000);
+    //
+    // feed_handler.set_quote_callback([&monitor](const types::Quote& q) {
+    //     monitor.on_quote(q);
+    // });
+    // feed_handler.set_trade_callback([&monitor](const types::Trade& t) {
+    //     monitor.on_trade(t);
+    // });
+    //
+    // generator.configure(50'000, symbols_file);
+    // feed_handler.subscribe("AAPL");
+    // feed_handler.subscribe("MSFT");
+    // feed_handler.subscribe("GOOG");
+    //
+    // feed_handler.start();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // disseminator.start();
+    // generator.start();
+    //
+    // std::cout << "Running benchmark for 5 seconds...\n";
+    // std::this_thread::sleep_for(std::chrono::seconds(5));
+    //
+    // std::cout << "Shutting down...\n";
+    // generator.stop();
+    // disseminator.stop();
+    // feed_handler.stop();
+    //
+    // return 0;
 
     /*
      Generator:
@@ -146,5 +158,3 @@ int main() {
 
 
 
-
-}

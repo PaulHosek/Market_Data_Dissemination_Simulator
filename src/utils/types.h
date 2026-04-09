@@ -31,7 +31,7 @@ namespace types {
     };
 
     using MarketDataMsg = std::variant<Quote, Trade>;
-    // using MarketDataQueue = WaitableSpscQueue<MarketDataMsg, 4096>;
+    inline constexpr int topic_header_size = 10; // e.g., Q:APPL ...
 }
 
 

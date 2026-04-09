@@ -49,6 +49,11 @@ add_executable(generator_tests
         src/utils/CustomSpscQueue.h
         src/utils/QueueConcepts.h
         src/disseminator/UdpDisseminator.h
+        src/feedhandler/UdpFeedhandler.h
+        tests/test_UdpDisseminator.cpp
+        tests/test_UdpFeedHandler.cpp
+        tests/test_integration_udp.cpp
+        src/utils/config.h
 )
 
 target_link_libraries(generator_tests

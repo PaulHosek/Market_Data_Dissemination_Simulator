@@ -43,7 +43,7 @@ TEST_F(IntegrationTest, EndToEndQuoteDelivery) {
     std::atomic<double> received_bid_price{0.0};
 
     // use call back for verification
-    feed_handler_->set_quote_callback([&](const types::Quote& q) {
+    feed_handler_->set_quote_callback([&](const types::Quote& q, int64_t feedhandler_time) {
         if (std::string_view(q.symbol, 4) == "AAPL") {
             received_bid_price = q.bid_price;
             quote_received = true;
@@ -74,7 +74,7 @@ TEST_F(IntegrationTest, NativeZmqFilteringDropsUnwantedData) {
     // Subscribe to appl but publish Msft, check if packet dropped by zmq on socket level.
     std::atomic<int> messages_received{0};
 
-    feed_handler_->set_quote_callback([&](const types::Quote&) {
+    feed_handler_->set_quote_callback([&](const types::Quote&, int64_t feedhandler_time) {
         messages_received++;
     });
 
