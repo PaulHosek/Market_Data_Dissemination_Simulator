@@ -3,18 +3,17 @@
 
 #include <boost/lockfree/spsc_queue.hpp>
 #include <atomic>
-#include <thread>
 #include <stop_token>
 
-template<typename T, size_t Capacity>
+#include "QueueConcepts.h"
+
+
+
+template<typename T, typename UnderlyingQueue_T>
+requires SpscQueueStorage<UnderlyingQueue_T, T>
 class WaitableSpscQueue {
 public:
     using value_type = T;
-
-private:
-    boost::lockfree::spsc_queue<T, boost::lockfree::capacity<Capacity>> queue_;
-    std::atomic<bool> is_sleeping_{false};
-
 public:
     bool push(const T& item) {
         if (queue_.push(item)) {
@@ -51,6 +50,10 @@ public:
     }
     
     [[nodiscard]] bool empty() { return queue_.empty(); }
+
+private:
+    UnderlyingQueue_T queue_;
+    std::atomic<bool> is_sleeping_{false};
 };
 
 #endif //WAITABLESPSCQUEUE_H

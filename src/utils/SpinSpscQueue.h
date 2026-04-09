@@ -4,8 +4,10 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <stop_token>
 #include <thread>
+#include "QueueConcepts.h"
 
-template<typename T, size_t Capacity>
+template<typename T, typename UnderlyingQueue_T>
+requires SpscQueueStorage<UnderlyingQueue_T, T>
 class SpinSpscQueue {
 public:
     using value_type = T;
@@ -26,7 +28,7 @@ public:
     [[nodiscard]] bool empty() const { return queue_.empty(); }
 
 private:
-    boost::lockfree::spsc_queue<T, boost::lockfree::capacity<Capacity>> queue_;
+    UnderlyingQueue_T queue_;
 };
 
 #endif

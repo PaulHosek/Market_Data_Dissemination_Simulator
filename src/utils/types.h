@@ -11,7 +11,6 @@
 #include <variant>
 #include "WaitableSpscQueue.h"
 
-
 namespace types {
     struct Quote {
         char symbol[8];
