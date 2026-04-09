@@ -39,7 +39,9 @@ private:
         while (queue_.pop(msg, stoken)) {
             std::visit([&](auto&& payload) {
                 using T = std::decay_t<decltype(payload)>;
-                
+                payload.disseminate_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+             std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
                 if constexpr (std::is_same_v<T, types::Quote>) {
                     topic_buf[0] = 'Q';
                     std::memcpy(&topic_buf[2], payload.symbol, 8);

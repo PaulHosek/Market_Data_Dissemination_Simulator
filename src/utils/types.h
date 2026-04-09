@@ -20,6 +20,8 @@ namespace types {
         uint32_t bid_size;
         uint32_t ask_size;
         uint64_t enqueue_timestamp;
+        uint64_t disseminate_timestamp{0};
+
     };
 
     struct Trade {
@@ -27,6 +29,7 @@ namespace types {
         double price;
         uint32_t size;
         uint64_t enqueue_timestamp;
+        uint64_t disseminate_timestamp{0};
     };
 
     using MarketDataMsg = std::variant<Quote, Trade>;

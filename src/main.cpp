@@ -5,72 +5,57 @@
 #include "chrono"
 
 
-
-#include "utils/types.h"
 #include "generator/RandomWalkGenerator.h"
 #include "disseminator/ZmqDisseminator.h"
 #include "feedhandler/ZmqFeedHandler.h"
 
+#include <thread>
+#include "utils/WaitableSpscQueue.h"
+#include "monitor/LatencyMonitor.h" // <-- Include the new monitor
+
 int main() {
-    // using namespace std::chrono_literals;
-    //
-    // types::QueueType_Quote qq;
-    // types::QueueType_Trade tq;
-    //
-    // MarketDataGenerator generator(qq, tq);
-    // generator.configure(1000, "../data/tickers.txt");
-    // generator.start();
-    //
-    // std::this_thread::sleep_for(10s);
-    // generator.stop();
+    std::cout << "--- Starting Latency Benchmark ---\n";
 
+    const std::string symbols_file = "test_symbols.txt";
+    std::ofstream out(symbols_file);
+    out << "AAPL\nMSFT\nGOOG\n";
+    out.close();
 
-
-    // 2. Instantiate the unified lock-free queue
-    types::MarketDataQueue queue;
-
-    // Use TCP for local testing to avoid network interface multicast routing issues
+    WaitableSpscQueue<types::MarketDataMsg, 8192> queue;
     std::string zmq_address = "tcp://127.0.0.1:5555";
 
-    // 3. Instantiate the architecture components
-    ZmqDisseminator<types::MarketDataQueue> disseminator(queue, zmq_address);
-    RandomWalkGenerator generator(queue);
-    ZmqFeedHandler subscriber(zmq_address);
+    ZmqDisseminator<WaitableSpscQueue<types::MarketDataMsg, 8192>> disseminator(queue, zmq_address);
+    RandomWalkGenerator<WaitableSpscQueue<types::MarketDataMsg, 8192>> generator(queue);
+    ZmqFeedHandler feed_handler(zmq_address);
 
-    // 4. Configure the system
-    generator.configure(1500, "../data/tickers.txt");
+    LatencyMonitor monitor(500'000);
 
+    feed_handler.set_quote_callback([&monitor](const types::Quote& q) {
+        monitor.on_quote(q);
+    });
+    feed_handler.set_trade_callback([&monitor](const types::Trade& t) {
+        monitor.on_trade(t);
+    });
 
-    // Test the ZMQ multi-part filtering!
-    // We only subscribe to AAPL and TSLA. We should NOT see GOOG or MSFT in the logs.
-    subscriber.subscribe("AAPL");
-    subscriber.subscribe("TSLA");
+    generator.configure(50'000, symbols_file);
+    feed_handler.subscribe("AAPL");
+    feed_handler.subscribe("MSFT");
+    feed_handler.subscribe("GOOG");
 
-    // 5. Start the engines
-    // Best practice: start feedhandler first, then disseminator, then generator
-    subscriber.start();
-
-    // Give the feedhandler a few milliseconds to establish the TCP connection
-    // before the disseminator starts blasting data
+    feed_handler.start();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
     disseminator.start();
     generator.start();
 
-    std::cout << "System running. Generating data for 5 seconds...\n";
-
-    // Let the system run for 5 seconds to watch the logs
+    std::cout << "Running benchmark for 5 seconds...\n";
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    // 6. Graceful shutdown
-    std::cout << "\n--- Initiating Shutdown ---\n";
-
-    // Stop upstream to downstream
+    std::cout << "Shutting down...\n";
     generator.stop();
     disseminator.stop();
-    subscriber.stop();
+    feed_handler.stop();
 
-
+    return 0;
 
     /*
      Generator:

@@ -51,7 +51,7 @@ TEST_F(IntegrationTest, EndToEndQuoteDelivery) {
     feed_handler_->subscribe("AAPL");
     feed_handler_->start();
 
-    // zmq processing time
+    // zmq processing time again
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     types::Quote q{};
@@ -59,7 +59,6 @@ TEST_F(IntegrationTest, EndToEndQuoteDelivery) {
     q.bid_price = 150.25;
     EXPECT_TRUE(queue_.push(q));
 
-    // zmq processing time
     for (int i = 0; i < 50; ++i) {
         if (quote_received.load()) break;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
