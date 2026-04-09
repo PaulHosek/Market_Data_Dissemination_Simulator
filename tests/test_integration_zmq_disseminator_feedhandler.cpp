@@ -4,6 +4,7 @@
 #include <atomic>
 #include <memory>
 #include <cstring>
+#include <boost/lockfree/spsc_queue.hpp>
 
 #include "../src/disseminator/ZmqDisseminator.h"
 #include "../src/feedhandler/ZmqFeedHandler.h"
@@ -14,7 +15,8 @@ class IntegrationTest : public ::testing::Test {
 protected:
     const std::string TEST_ADDR = "tcp://127.0.0.1:5577";
     
-    using TestQueue = WaitableSpscQueue<types::MarketDataMsg, 1024>;
+    using Storage = boost::lockfree::spsc_queue<types::MarketDataMsg, boost::lockfree::capacity<1024>>;
+    using TestQueue = WaitableSpscQueue<types::MarketDataMsg, Storage>;
     TestQueue queue_;
     
     std::unique_ptr<ZmqDisseminator<TestQueue>> disseminator_;

@@ -10,6 +10,7 @@
 #include "../src/disseminator/ZmqDisseminator.h"
 #include "../src/utils/types.h"
 #include "../src/utils/WaitableSpscQueue.h"
+#include <boost/lockfree/spsc_queue.hpp>
 
 template <typename MarketDataQueue>
 class MockDisseminator final : public IDisseminator<MockDisseminator<MarketDataQueue>, MarketDataQueue> {
@@ -30,8 +31,11 @@ public:
 
 class ZmqDisseminatorUnitTest : public ::testing::Test {
 protected:
-    types::MarketDataQueue queue_;
-    MockDisseminator<types::MarketDataQueue> disseminator_{queue_};
+    using Storage = boost::lockfree::spsc_queue<types::MarketDataMsg, boost::lockfree::capacity<1024>>;
+    using TestQueue = WaitableSpscQueue<types::MarketDataMsg, Storage>;
+
+    TestQueue queue_;
+    MockDisseminator<TestQueue> disseminator_{queue_};
 
     size_t count_remaining_messages() {
         size_t count = 0;

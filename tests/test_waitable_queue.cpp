@@ -5,9 +5,12 @@
 #include <vector>
 
 #include "../src/utils/WaitableSpscQueue.h"
+#include <boost/lockfree/spsc_queue.hpp>
 
 constexpr size_t TEST_CAPACITY = 10;
-using TestQueue = WaitableSpscQueue<int, TEST_CAPACITY>;
+using Storage = boost::lockfree::spsc_queue<int, boost::lockfree::capacity<TEST_CAPACITY>>;
+
+using TestQueue = WaitableSpscQueue<int, Storage>;
 
 class WaitableQueueTest : public ::testing::Test {
 protected:
