@@ -15,7 +15,7 @@ protected:
 };
 
 TEST_F(UdpDisseminatorTest, StartsAndStopsCleanly) {
-    UdpDisseminator<TestQueue> disseminator(queue_, "127.0.0.1", 55550);
+    UdpDisseminator<TestQueue> disseminator(queue_, "239.255.0.1", 55550);
 
     EXPECT_NO_THROW(disseminator.start());
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -23,7 +23,7 @@ TEST_F(UdpDisseminatorTest, StartsAndStopsCleanly) {
 }
 
 TEST_F(UdpDisseminatorTest, ConsumesFromQueue) {
-    UdpDisseminator<TestQueue> disseminator(queue_, "127.0.0.1", 55551);
+    UdpDisseminator<TestQueue> disseminator(queue_, "239.255.0.1", 55551);
     disseminator.start();
 
     types::Quote q{};

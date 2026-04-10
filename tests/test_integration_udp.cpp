@@ -21,8 +21,8 @@ protected:
     std::unique_ptr<UdpFeedHandler> feedhandler_;
 
     void SetUp() override {
-        feedhandler_ = std::make_unique<UdpFeedHandler>(TEST_PORT);
-        disseminator_ = std::make_unique<UdpDisseminator<TestQueue>>(queue_, "127.0.0.1", TEST_PORT);
+        feedhandler_ = std::make_unique<UdpFeedHandler>("239.255.0.1", TEST_PORT);
+        disseminator_ = std::make_unique<UdpDisseminator<TestQueue>>(queue_, "239.255.0.1", TEST_PORT);
 
         feedhandler_->start();
         disseminator_->start();
@@ -35,14 +35,12 @@ protected:
 };
 
 TEST_F(UdpIntegrationTest, DeliversSubscribedQuote) {
-    // Use release acquire to ensure that the payload is fully written before the receiving thread loads it.
     types::Quote received_quote{};
     std::atomic<bool> quote_received{false};
 
     feedhandler_->set_quote_callback([&](const types::Quote& q, uint64_t feedhandler_time) {
         received_quote = q;
         quote_received.store(true, std::memory_order_release);
-        // force that the received_quote can't move after the store
     });
 
     feedhandler_->subscribe("NVDA    ");
@@ -66,16 +64,15 @@ TEST_F(UdpIntegrationTest, DeliversSubscribedQuote) {
 
     ASSERT_TRUE(success) << "Timed out waiting for UDP packet.";
 
-    // check the packet
     EXPECT_STREQ(received_quote.symbol, "NVDA    ");
     EXPECT_DOUBLE_EQ(received_quote.bid_price, 850.50);
 }
 
 TEST_F(UdpIntegrationTest, DropsUnsubscribedData) {
-    int received_count{0};
+    std::atomic<int> received_count{0};
 
     feedhandler_->set_quote_callback([&](const types::Quote&, uint64_t feedhandler_time) {
-        received_count++;
+        received_count.fetch_add(1, std::memory_order_relaxed);
     });
 
     feedhandler_->subscribe("MSFT    ");
@@ -87,5 +84,5 @@ TEST_F(UdpIntegrationTest, DropsUnsubscribedData) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    EXPECT_EQ(received_count, 0);
+    EXPECT_EQ(received_count.load(std::memory_order_relaxed), 0);
 }

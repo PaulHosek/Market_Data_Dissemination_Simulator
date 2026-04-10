@@ -5,7 +5,7 @@
 #include "../src/feedhandler/UdpFeedHandler.h"
 
 TEST(UdpFeedHandlerTest, StartsAndStopsCleanly) {
-    UdpFeedHandler handler(55552);
+    UdpFeedHandler handler("239.255.0.1", 55552);
 
     EXPECT_NO_THROW(handler.start());
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -13,7 +13,7 @@ TEST(UdpFeedHandlerTest, StartsAndStopsCleanly) {
 }
 
 TEST(UdpFeedHandlerTest, CanSubmitSubscriptionsWithoutCrash) {
-    UdpFeedHandler handler(55553);
+    UdpFeedHandler handler("239.255.0.1", 55553);
     handler.start();
 
     EXPECT_NO_THROW(handler.subscribe("AAPL"));

@@ -41,7 +41,7 @@ struct SubCommand {
 
 class UdpFeedHandler final : public IFeedHandler<UdpFeedHandler> {
 public:
-    UdpFeedHandler(unsigned short port) {
+    UdpFeedHandler(const std::string& ip, unsigned short port) {
         sock_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (sock_ < 0) throw std::runtime_error("Failed to create UDP socket");
 
@@ -60,6 +60,14 @@ public:
 
         if (bind(sock_, reinterpret_cast<struct sockaddr*>(&bind_addr), sizeof(bind_addr)) < 0) {
             throw std::runtime_error("Failed to bind UDP socket");
+        }
+
+        struct ip_mreq mreq{};
+        inet_pton(AF_INET, ip.c_str(), &mreq.imr_multiaddr.s_addr);
+        mreq.imr_interface.s_addr = htonl(INADDR_ANY); // Let OS pick the default network interface
+
+        if (setsockopt(sock_, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+            throw std::runtime_error("Failed to join multicast group. Check if IP is a valid multicast address (e.g., 239.x.x.x)");
         }
 
         // want the socket in non-blocking mode.

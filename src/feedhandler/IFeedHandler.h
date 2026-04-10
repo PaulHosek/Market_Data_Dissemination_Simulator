@@ -37,8 +37,8 @@ public:
         static_cast<Derived*>(this)->unsubscribe_impl(symbol);
     }
 
-    void set_quote_callback(std::function<void(const types::Quote&)> cb) { on_quote_ = std::move(cb); }
-    void set_trade_callback(std::function<void(const types::Trade&)> cb) { on_trade_ = std::move(cb); }
+    void set_quote_callback(std::function<void(const types::Quote&, uint64_t)> cb) { on_quote_ = std::move(cb); }
+    void set_trade_callback(std::function<void(const types::Trade&, uint64_t)> cb) { on_trade_ = std::move(cb); }
 
 
 protected:
@@ -46,18 +46,26 @@ protected:
     ~IFeedHandler() = default;
 
     void deliver_to_client(const types::Quote& quote) {
-        if (on_quote_) on_quote_(quote);
+        if (on_quote_) {
+            uint64_t t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            on_quote_(quote, t3); // callback should handle msg and receive_timestamp
+        }
     }
 
     void deliver_to_client(const types::Trade& trade) {
-        if (on_trade_) on_trade_(trade);
+        if (on_trade_) {
+            uint64_t t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            on_trade_(trade, t3);
+        }
     }
 
 
 private:
     std::jthread receiver_thread_;
-    std::function<void(const types::Quote&)> on_quote_;
-    std::function<void(const types::Trade&)> on_trade_;
+    std::function<void(const types::Quote&, uint64_t)> on_quote_;
+    std::function<void(const types::Trade&, uint64_t)> on_trade_;
 };
 
 #endif
