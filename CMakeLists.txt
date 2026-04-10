@@ -13,6 +13,7 @@ find_package(Boost REQUIRED COMPONENTS lockfree)
 find_package(spdlog REQUIRED)
 find_package(GTest REQUIRED)
 find_package(cppzmq CONFIG REQUIRED)
+find_package(cxxopts CONFIG REQUIRED)
 
 include_directories(include)
 include_directories(src)
@@ -29,6 +30,7 @@ target_link_libraries(main_simulate
         PRIVATE Boost::lockfree
         PRIVATE spdlog::spdlog
         PRIVATE cppzmq
+        PRIVATE cxxopts::cxxopts
 )
 
 # --- Tests ---
@@ -61,6 +63,7 @@ target_link_libraries(generator_tests
         PRIVATE Boost::lockfree
         PRIVATE spdlog::spdlog
         PRIVATE cppzmq
+        PRIVATE cxxopts::cxxopts
 )
 
 gtest_discover_tests(generator_tests)

@@ -26,7 +26,7 @@ public:
         spdlog::info("RandomWalkGenerator configured: {} msgs/sec, {} symbols", messages_per_second, symbols_.size());
     }
 
-    inline types::MarketDataMsg generate_msg_impl() {
+    types::MarketDataMsg generate_msg_impl() {
         std::uniform_int_distribution<size_t> symbol_distr(0, symbols_.size() - 1);
         std::uniform_int_distribution<uint8_t> type_dist(0, 1);
 
@@ -82,8 +82,17 @@ private:
         std::vector<std::string> tickers;
         std::ifstream file(filename);
         std::string str;
+
+        // had some problems with linux/windows CRLF vs R so now strip all
         while (std::getline(file, str)) {
-            if (!str.empty() && str.length() < 9) tickers.push_back(str);
+            str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+            str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+
+            str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
+
+            if (!str.empty() && str.length() < 9) {
+                tickers.push_back(str);
+            }
         }
         return tickers;
     }

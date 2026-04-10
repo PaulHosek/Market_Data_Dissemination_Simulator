@@ -48,7 +48,7 @@ protected:
     void deliver_to_client(const types::Quote& quote) {
         if (on_quote_) {
             uint64_t t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+                std::chrono::steady_clock::now().time_since_epoch()).count();
             on_quote_(quote, t3); // callback should handle msg and receive_timestamp
         }
     }
@@ -56,7 +56,7 @@ protected:
     void deliver_to_client(const types::Trade& trade) {
         if (on_trade_) {
             uint64_t t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+                std::chrono::steady_clock::now().time_since_epoch()).count();
             on_trade_(trade, t3);
         }
     }

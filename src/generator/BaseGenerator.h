@@ -48,10 +48,10 @@ protected:
 
 private:
     void generation_loop(const std::stop_token &stop_tok) {
-        auto previous_time = std::chrono::high_resolution_clock::now();
+        auto previous_time = std::chrono::steady_clock::now();
 
         while (!stop_tok.stop_requested()) {
-            auto now = std::chrono::high_resolution_clock::now();
+            auto now = std::chrono::steady_clock::now();
 
             if (auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time); elapsed >= interval_) {
                 
@@ -61,7 +61,7 @@ private:
                 // Stamp enqueue time centrally right before pushing
                 std::visit([](auto&& arg) {
                     arg.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+                        std::chrono::steady_clock::now().time_since_epoch()).count();
                 }, msg);
 
                 // Try to push, yielding if the queue is temporarily full

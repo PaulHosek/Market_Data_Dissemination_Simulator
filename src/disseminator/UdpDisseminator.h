@@ -39,6 +39,9 @@ public:
         unsigned char mc_ttl = 1; // don't want packet to escape local subnet
         setsockopt(sock_, IPPROTO_IP, IP_MULTICAST_TTL, &mc_ttl, sizeof(mc_ttl));
 
+        unsigned char loop = 1;
+        setsockopt(sock_, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+
         struct sockaddr_in dest_addr{};
         dest_addr.sin_family = AF_INET;
         dest_addr.sin_port = htons(port);

@@ -1,160 +1,181 @@
 #include <iostream>
+#include <stdexcept>
+#include <cxxopts.hpp>
+#include <spdlog/spdlog.h>
 
-#include "generator/MarketDataGenerator.h"
-#include "utils/types.h"
-#include "chrono"
+#include "./utils/config.h"
+#include "./utils/CustomSpscQueue.h"
+#include "./utils/SpinSpscQueue.h"
+#include "./utils/WaitableSpscQueue.h"
+#include "./disseminator/UdpDisseminator.h"
+#include "./disseminator/ZmqDisseminator.h"
+#include "./generator/RandomWalkGenerator.h"
+#include "./monitor/LatencyMonitor.h"
+#include "./feedhandler/UdpFeedhandler.h"
+#include "./feedhandler/ZmqFeedHandler.h"
+
+template <typename MarketDataQueue, typename DisseminatorType, typename FeedHandlerType>
+void run_benchmark_pipeline(const BenchmarkConfig& config,
+                            MarketDataQueue& queue,
+                            DisseminatorType& disseminator,
+                            FeedHandlerType& feedhandler) {
+
+    spdlog::info("Starting benchmark: Transport={}, QueueStrategy={}, Size={}, Rate={}, Duration={}s",
+                 (config.transport == TransportProtocol::UdpMulticast ? "UDP" : "ZMQ"),
+                 (config.queue_strategy == QueueWaitStrategy::Spin ? "Spin" : "Waitable"),
+                 config.queue_size, config.message_rate, config.duration_sec);
+
+    LatencyMonitor monitor(config.message_rate * config.duration_sec, config.out_dir);
+
+    feedhandler.set_quote_callback([&monitor](const types::Quote& q, uint64_t recv_ts) {
+        monitor.on_quote(q, recv_ts);
+    });
+    feedhandler.set_trade_callback([&monitor](const types::Trade& t, uint64_t recv_ts) {
+        monitor.on_trade(t, recv_ts);
+    });
+
+    RandomWalkGenerator<MarketDataQueue> generator(queue);
+    generator.configure(config.message_rate, config.symbols_file);
+
+    // start everything in reverse order (Consumer -> Publisher -> Generator)
+    feedhandler.start();
 
 
-#include "generator/RandomWalkGenerator.h"
-#include "disseminator/ZmqDisseminator.h"
-#include "feedhandler/ZmqFeedHandler.h"
+    // feedhandler.subscribe("AAPL");
+    // feedhandler.subscribe("MSFT");
 
-#include <thread>
-#include "utils/WaitableSpscQueue.h"
-#include "monitor/LatencyMonitor.h" // <-- Include the new monitor
+    std::ifstream sym_file(config.symbols_file);
+    std::string sym;
+    int sub_count = 0;
+    while (std::getline(sym_file, sym)) {
+        sym.erase(std::remove(sym.begin(), sym.end(), '\r'), sym.end());
+        sym.erase(std::remove(sym.begin(), sym.end(), '\n'), sym.end());
+        sym.erase(std::remove_if(sym.begin(), sym.end(), ::isspace), sym.end());
 
-#include <boost/lockfree/spsc_queue.hpp>
-#include "utils/CustomSpscQueue.h"
-#include "utils/SpinSpscQueue.h"
-#include <utils/config.h>
-#include <feedhandler/UdpFeedhandler.h>
-#include <disseminator/UdpDisseminator.h>
+        if (!sym.empty() && sym.length() < 9) {
+            feedhandler.subscribe(sym);
+            sub_count++;
+        }
+    }
+    spdlog::info("Feedhandler subscribed to {} symbols.", sub_count);
 
-using StorageT = boost::lockfree::spsc_queue<types::MarketDataMsg, boost::lockfree::capacity<65536>>;
+    disseminator.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));  // for the handshake if zmq tcp
+    generator.start();
 
+    std::this_thread::sleep_for(std::chrono::seconds(config.duration_sec));
 
+    spdlog::info("Benchmark duration met. Stopping generator...");
+    generator.stop();
 
-int main(int argc, char* argv[]) {
+    spdlog::info("Draining queues and network buffers (1 second)...");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    disseminator.stop();
+    feedhandler.stop();
+
+    spdlog::info("Benchmark completed.");
+}
+
+template <std::size_t Size>
+void dispatch_types(const BenchmarkConfig& config) {
+    using BaseQueue = CustomSpscQueue<types::MarketDataMsg, Size>;
+
+    if (config.queue_strategy == QueueWaitStrategy::Spin) {
+        using QueueType = SpinSpscQueue<types::MarketDataMsg, BaseQueue>;
+        QueueType queue;
+
+        if (config.transport == TransportProtocol::UdpMulticast) {
+            UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
+            UdpFeedHandler feedhandler(config.ip_address, config.port);
+            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+        } else {
+            // std::string zmq_bind = "ecmp://127.0.0.1:" + config.ip_address + ":" + std::to_string(config.port);
+            std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
+            ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
+            ZmqFeedHandler feedhandler(zmq_bind);
+            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+        }
+    } else {
+        using QueueType = WaitableSpscQueue<types::MarketDataMsg, BaseQueue>;
+        QueueType queue;
+
+        if (config.transport == TransportProtocol::UdpMulticast) {
+            UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
+            UdpFeedHandler feedhandler(config.ip_address, config.port);
+            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+        } else {
+            // std::string zmq_bind = "tcp://127.0.0.1:" + config.ip_address + ":" + std::to_string(config.port);
+            std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
+            ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
+            ZmqFeedHandler feedhandler(zmq_bind);
+            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+        }
+    }
+}
+
+void dispatch_size(const BenchmarkConfig& config) {
+    switch (config.queue_size) {
+        case 128:     dispatch_types<128>(config); break;
+        case 512:     dispatch_types<512>(config); break;
+        case 1024:    dispatch_types<1024>(config); break;
+        case 4096:    dispatch_types<4096>(config); break;
+        case 16384:   dispatch_types<16384>(config); break;
+        case 65536:   dispatch_types<65536>(config); break;
+        default:
+            throw std::invalid_argument("Unsupported queue size. Allowed: 128, 512, 1024, 4096, 16384, 65536");
+    }
+}
+
+int main(int argc, char** argv) {
+    cxxopts::Options options("MarketBench", "Low latency market data disseminator benchmark");
+
+    options.add_options()
+        ("q,queue", "Queue type (spin/waitable)", cxxopts::value<std::string>()->default_value("spin"))
+        ("s,size", "Queue size (128, 512, 1024, 4096, 16384, 65536)", cxxopts::value<std::size_t>()->default_value("1024"))
+        ("t,transport", "Transport (udp/zmq)", cxxopts::value<std::string>()->default_value("udp"))
+        ("r,rate", "Message rate (msgs/sec)", cxxopts::value<uint32_t>()->default_value("10000"))
+        ("d,duration", "Benchmark duration in seconds", cxxopts::value<uint32_t>()->default_value("10"))
+        ("h,help", "Print usage")
+        ("f,symbols", "Path to symbols.txt", cxxopts::value<std::string>()->default_value("../data/symbols.txt"))
+        ("o,out", "Output directory for CSVs", cxxopts::value<std::string>()->default_value("../data"));
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        return 0;
+    }
+
+    BenchmarkConfig config;
+    config.queue_size = result["size"].as<std::size_t>();
+    config.message_rate = result["rate"].as<uint32_t>();
+    config.duration_sec = result["duration"].as<uint32_t>();
+    config.symbols_file = result["symbols"].as<std::string>();
+    config.out_dir = result["out"].as<std::string>();
+
+    // queue
+    std::string q_type = result["queue"].as<std::string>();
+    if (q_type == "spin") config.queue_strategy = QueueWaitStrategy::Spin;
+    else if (q_type == "waitable") config.queue_strategy = QueueWaitStrategy::Waitable;
+    else throw std::invalid_argument("Invalid queue type. Use 'spin' or 'waitable'.");
+
+    // transport
+    std::string t_type = result["transport"].as<std::string>();
+    if (t_type == "udp") {
+        config.transport = TransportProtocol::UdpMulticast;
+    }
+    else if (t_type == "zmq") config.transport = TransportProtocol::Zmq;
+    else throw std::invalid_argument("Invalid transport type. Use 'udp' or 'zmq'.");
+
+    try {
+        dispatch_size(config);
+    } catch (const std::exception& e) {
+        spdlog::error("Benchmark failed: {}", e.what());
+        return 1;
+    }
 
     return 0;
 }
-
-// int main() {
-    // using MsgType = types::MarketDataMsg;
-    // constexpr size_t Cap = 8192;
-    //
-    // // options in queus
-    // using BoostStorage = boost::lockfree::spsc_queue<MsgType, boost::lockfree::capacity<Cap>>;
-    // WaitableSpscQueue<MsgType, BoostStorage> safe_queue;
-    // using MyStorage = CustomSpscQueue<MsgType, Cap>;
-    // SpinSpscQueue<MsgType, MyStorage> fast_queue;
-    //
-    // std::cout << "--- Starting Latency Benchmark ---\n";
-    //
-    //
-    // const std::string symbols_file = "test_symbols.txt";
-    // std::ofstream out(symbols_file);
-    // out << "AAPL\nMSFT\nGOOG\n";
-    // out.close();
-    //
-    // std::string zmq_address = "tcp://127.0.0.1:5555";
-    //
-    // ZmqDisseminator<decltype(fast_queue)> disseminator(fast_queue, zmq_address);
-    // RandomWalkGenerator<decltype(fast_queue)> generator(fast_queue);
-    // ZmqFeedHandler feed_handler(zmq_address);
-    //
-    // LatencyMonitor monitor(500'000);
-    //
-    // feed_handler.set_quote_callback([&monitor](const types::Quote& q) {
-    //     monitor.on_quote(q);
-    // });
-    // feed_handler.set_trade_callback([&monitor](const types::Trade& t) {
-    //     monitor.on_trade(t);
-    // });
-    //
-    // generator.configure(50'000, symbols_file);
-    // feed_handler.subscribe("AAPL");
-    // feed_handler.subscribe("MSFT");
-    // feed_handler.subscribe("GOOG");
-    //
-    // feed_handler.start();
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    // disseminator.start();
-    // generator.start();
-    //
-    // std::cout << "Running benchmark for 5 seconds...\n";
-    // std::this_thread::sleep_for(std::chrono::seconds(5));
-    //
-    // std::cout << "Shutting down...\n";
-    // generator.stop();
-    // disseminator.stop();
-    // feed_handler.stop();
-    //
-    // return 0;
-
-    /*
-     Generator:
-     - start creates a jthread and passes it the generation loop and the stop token of the generator object
-     - stop calls the stop token and resets it after
-     - generation loop
-        - spins on the time, the delta needed for n iterations
-        is larger than the expected it generates a trade or quote with 50/50 probability
-        -
-     */
-
-
-    /*
-     Disseminator:
-     - Ctor: Link the 2 queues and create a zmq pub socket, bind the multicast address and set linger to 0
-        - context is thread safe so could use inproc communication (faster) if feedhandler and disseminator share the context
-    - start -> calls process
-    - process: launch 2 jthreads in workers array (consume threads and consume quotes)
-        - consume_quotes:
-            - pop the top quote in the queue into a temporary
-            - copy that element into the zmq message
-            - lock the socket, send the msg -> lots of locking here Fix it
-    - stop: clear the worker array
-     */
-
-    /*
-     FeedHandler:
-     - Ctor: creates new context and configures the multicast feedhandler socket
-        - subscribe to the same address as the disseminator is sending out
-    - start: launches thread with receive loop
-    - receive_loop: handles both quotes and trades.
-        - checks if that quote is subscribed to by ANY and then calls deliver_to_client -> weird, see doc
-     */
-
-
-
-
-
-
-
-
-
-    // using namespace std::chrono_literals;
-    // // QueueType_Quote x{};
-    // // auto i = x;
-    // types::QueueType_Quote qq{};
-    // types::QueueType_Trade tq{};
-    // MarketDataGenerator mdg(qq, tq);
-    //
-    // mdg.configure(1000, "../data/tickers.txt");
-    // mdg.start();
-
-    // TODO dissemination engine should pop from queue and forward to the right subscribers
-    // Once this works we can think about having a local order book that we use to keep track of old symbols. A feedhandler could then also get the history.
-
-    // TODO working here right now
-    // Part 1: get dissemination engine to just read from the queue
-    // 1. read from queue
-    // 2. check if there are subscribers requesting this symbol
-
-    // Part 2:
-    // 1. implement feedhandler and TCP handshake with dissemination engine
-    // 2. implement the UDP multicast of symbols
-
-    // Part 3:
-    // 1. Check which performances we want to monitor
-    // 2. implement performance monitor
-
-
-
-    // mdg.stop();
-
-
-
-
 
 
