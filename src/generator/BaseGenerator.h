@@ -48,30 +48,27 @@ protected:
 
 private:
     void generation_loop(const std::stop_token &stop_tok) {
-        auto previous_time = std::chrono::steady_clock::now();
+        auto next_time = std::chrono::high_resolution_clock::now();
 
         while (!stop_tok.stop_requested()) {
-            auto now = std::chrono::steady_clock::now();
+            auto now = std::chrono::high_resolution_clock::now();
 
-            if (auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous_time); elapsed >= interval_) {
-                
-                // CRTP Call: Get the next message from the derived specific strategy
+            if (now >= next_time) {
                 types::MarketDataMsg msg = static_cast<Derived*>(this)->generate_msg_impl();
 
-                // Stamp enqueue time centrally right before pushing
                 std::visit([](auto&& arg) {
                     arg.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::steady_clock::now().time_since_epoch()).count();
+                        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
                 }, msg);
 
-                // Try to push, yielding if the queue is temporarily full
                 while (!stop_tok.stop_requested() && !queue_.push(msg)) {
-                    std::this_thread::yield();
                 }
-                
-                previous_time = now;
+
+                next_time += interval_;
             } else {
-                std::this_thread::sleep_for(interval_ - elapsed);
+                if (next_time - now > std::chrono::milliseconds(2)) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
             }
         }
     }
