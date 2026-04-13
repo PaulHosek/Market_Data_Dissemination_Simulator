@@ -13,11 +13,14 @@ enum class TransportProtocol {
     UdpMulticast,
     Zmq
 };
-
+enum class UnderlyingQueue {
+    Custom,
+    Boost
+};
 struct BenchmarkConfig {
     QueueWaitStrategy queue_strategy = QueueWaitStrategy::Spin;
     TransportProtocol transport = TransportProtocol::UdpMulticast;
-    
+    UnderlyingQueue underlying_queue = UnderlyingQueue::Custom;
     std::size_t queue_size = 1024;
     uint32_t message_rate = 10000;
     uint32_t duration_sec = 10;

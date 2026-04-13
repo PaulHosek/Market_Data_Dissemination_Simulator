@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <cxxopts.hpp>
 #include <spdlog/spdlog.h>
+#include <boost/lockfree/spsc_queue.hpp>
 
 #include "./utils/config.h"
 #include "./utils/CustomSpscQueue.h"
@@ -79,37 +80,65 @@ void run_benchmark_pipeline(const BenchmarkConfig& config,
 
 template <std::size_t Size>
 void dispatch_types(const BenchmarkConfig& config) {
-    using BaseQueue = CustomSpscQueue<types::MarketDataMsg, Size>;
+    if (config.underlying_queue == UnderlyingQueue::Custom) {
+        using BaseQueue = CustomSpscQueue<types::MarketDataMsg, Size>;
 
-    if (config.queue_strategy == QueueWaitStrategy::Spin) {
-        using QueueType = SpinSpscQueue<types::MarketDataMsg, BaseQueue>;
-        QueueType queue;
-
-        if (config.transport == TransportProtocol::UdpMulticast) {
-            UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
-            UdpFeedHandler feedhandler(config.ip_address, config.port);
-            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+        if (config.queue_strategy == QueueWaitStrategy::Spin) {
+            using QueueType = SpinSpscQueue<types::MarketDataMsg, BaseQueue>;
+            QueueType queue;
+            if (config.transport == TransportProtocol::UdpMulticast) {
+                UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
+                UdpFeedHandler feedhandler(config.ip_address, config.port);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            } else {
+                std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
+                ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
+                ZmqFeedHandler feedhandler(zmq_bind);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            }
         } else {
-            // std::string zmq_bind = "ecmp://127.0.0.1:" + config.ip_address + ":" + std::to_string(config.port);
-            std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
-            ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
-            ZmqFeedHandler feedhandler(zmq_bind);
-            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            using QueueType = WaitableSpscQueue<types::MarketDataMsg, BaseQueue>;
+            QueueType queue;
+            if (config.transport == TransportProtocol::UdpMulticast) {
+                UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
+                UdpFeedHandler feedhandler(config.ip_address, config.port);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            } else {
+                std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
+                ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
+                ZmqFeedHandler feedhandler(zmq_bind);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            }
         }
     } else {
-        using QueueType = WaitableSpscQueue<types::MarketDataMsg, BaseQueue>;
-        QueueType queue;
+        using BaseQueue = boost::lockfree::spsc_queue<types::MarketDataMsg, boost::lockfree::capacity<Size>>;
 
-        if (config.transport == TransportProtocol::UdpMulticast) {
-            UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
-            UdpFeedHandler feedhandler(config.ip_address, config.port);
-            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+        if (config.queue_strategy == QueueWaitStrategy::Spin) {
+            using QueueType = SpinSpscQueue<types::MarketDataMsg, BaseQueue>;
+            QueueType queue;
+            if (config.transport == TransportProtocol::UdpMulticast) {
+                UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
+                UdpFeedHandler feedhandler(config.ip_address, config.port);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            } else {
+                std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
+                ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
+                ZmqFeedHandler feedhandler(zmq_bind);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            }
         } else {
-            // std::string zmq_bind = "tcp://127.0.0.1:" + config.ip_address + ":" + std::to_string(config.port);
-            std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
-            ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
-            ZmqFeedHandler feedhandler(zmq_bind);
-            run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            using QueueType = WaitableSpscQueue<types::MarketDataMsg, BaseQueue>;
+            QueueType queue;
+            if (config.transport == TransportProtocol::UdpMulticast) {
+                UdpDisseminator<QueueType> disseminator(queue, config.ip_address, config.port);
+                UdpFeedHandler feedhandler(config.ip_address, config.port);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            } else {
+                std::string zmq_bind = "tcp://127.0.0.1:" + std::to_string(config.port);
+                ZmqDisseminator<QueueType> disseminator(queue, zmq_bind);
+                ZmqFeedHandler feedhandler(zmq_bind);
+                run_benchmark_pipeline(config, queue, disseminator, feedhandler);
+            }
         }
     }
 }
@@ -138,7 +167,8 @@ int main(int argc, char** argv) {
         ("d,duration", "Benchmark duration in seconds", cxxopts::value<uint32_t>()->default_value("10"))
         ("h,help", "Print usage")
         ("f,symbols", "Path to symbols.txt", cxxopts::value<std::string>()->default_value("../data/symbols.txt"))
-        ("o,out", "Output directory for CSVs", cxxopts::value<std::string>()->default_value("../data"));
+        ("o,out", "Output directory for CSVs", cxxopts::value<std::string>()->default_value("../data"))
+        ("u,underlying", "Underlying queue (custom/boost)", cxxopts::value<std::string>()->default_value("custom"));
 
     auto result = options.parse(argc, argv);
 
@@ -154,13 +184,17 @@ int main(int argc, char** argv) {
     config.symbols_file = result["symbols"].as<std::string>();
     config.out_dir = result["out"].as<std::string>();
 
-    // queue
     std::string q_type = result["queue"].as<std::string>();
     if (q_type == "spin") config.queue_strategy = QueueWaitStrategy::Spin;
     else if (q_type == "waitable") config.queue_strategy = QueueWaitStrategy::Waitable;
     else throw std::invalid_argument("Invalid queue type. Use 'spin' or 'waitable'.");
 
-    // transport
+
+    std::string u_type = result["underlying"].as<std::string>();
+    if (u_type == "custom") config.underlying_queue = UnderlyingQueue::Custom;
+    else if (u_type == "boost") config.underlying_queue = UnderlyingQueue::Boost;
+    else throw std::invalid_argument("Invalid underlying queue. Use 'custom' or 'boost'.");
+
     std::string t_type = result["transport"].as<std::string>();
     if (t_type == "udp") {
         config.transport = TransportProtocol::UdpMulticast;
