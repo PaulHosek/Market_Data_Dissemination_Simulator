@@ -30,7 +30,7 @@ jobs:
 
       - name: Install vcpkg packages
         run: |
-          ./vcpkg/vcpkg install boost-lockfree spdlog gtest cppzmq
+          ./vcpkg/vcpkg install boost-lockfree spdlog gtest cppzmq cxxopts
 
       - name: Configure CMake
         run: |
