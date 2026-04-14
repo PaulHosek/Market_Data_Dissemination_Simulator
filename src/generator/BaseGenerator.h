@@ -48,28 +48,29 @@ protected:
 
 private:
     void generation_loop(const std::stop_token &stop_tok) {
-        auto next_time = std::chrono::high_resolution_clock::now();
+        auto next_time = std::chrono::steady_clock::now();
 
         while (!stop_tok.stop_requested()) {
-            auto now = std::chrono::high_resolution_clock::now();
+            auto now = std::chrono::steady_clock::now();
 
             if (now >= next_time) {
                 types::MarketDataMsg msg = static_cast<Derived*>(this)->generate_msg_impl();
 
                 std::visit([](auto&& arg) {
                     arg.enqueue_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+                        std::chrono::steady_clock::now().time_since_epoch()).count();
                 }, msg);
 
                 while (!stop_tok.stop_requested() && !queue_.push(msg)) {
                 }
 
                 next_time += interval_;
-            } else {
-                if (next_time - now > std::chrono::milliseconds(2)) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                }
             }
+            // else {
+            //     if (next_time - now > std::chrono::milliseconds(2)) {
+            //         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            //     }
+            // }
         }
     }
 

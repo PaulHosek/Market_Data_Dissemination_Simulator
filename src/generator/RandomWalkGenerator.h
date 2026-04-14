@@ -56,7 +56,7 @@ private:
         next_quote.bid_size = quote_size(rng_);
         next_quote.ask_size = quote_size(rng_);
         next_quote.enqueue_timestamp= std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::steady_clock::now().time_since_epoch()).count();
 
         return next_quote;
     }
@@ -73,7 +73,7 @@ private:
         next_trade.price = price;
         next_trade.size = trade_size(rng_);
         next_trade.enqueue_timestamp= std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::steady_clock::now().time_since_epoch()).count();
 
         return next_trade;
     }

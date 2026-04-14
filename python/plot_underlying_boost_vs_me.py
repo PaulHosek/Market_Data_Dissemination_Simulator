@@ -63,6 +63,7 @@ def main():
         data=df_all,
         x="queue_us",
         hue="Implementation",
+        # bins=100,
         kde=True,
         log_scale=True,
         stat="density",
@@ -79,7 +80,7 @@ def main():
     min_val = df_all['queue_us'].min() * 0.8
     ax.set_xlim(min_val, p999 * 1.5)
 
-    ax.set_title("Lock-Free Queue Internal Latency: Custom vs Boost (Zoomed to 99.9th %)", pad=20, fontweight='bold')
+    ax.set_title("Lock-Free Queue Internal Latency: Custom vs Boost (Zoomed to 99th %)", pad=20, fontweight='bold')
     ax.set_xlabel("Queue Latency (Microseconds) - Log Scale", fontweight='bold')
     ax.set_ylabel("Probability Density", fontweight='bold')
 

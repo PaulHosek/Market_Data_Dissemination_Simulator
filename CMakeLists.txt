@@ -9,7 +9,7 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS lockfree)
 find_package(spdlog REQUIRED)
 find_package(GTest REQUIRED)
 find_package(cppzmq CONFIG REQUIRED)
