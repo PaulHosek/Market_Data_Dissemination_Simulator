@@ -20,10 +20,16 @@ include_directories(src)
 
 # --- Main Executable ---
 add_executable(main_simulate
-        src/main.cpp
+        src/generator/RandomWalkGenerator.h
         src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
-        src/generator/RandomWalkGenerator.h
+        src/utils/SpinSpscQueue.h
+        src/monitor/LatencyMonitor.h
+        src/utils/CustomSpscQueue.h
+        src/utils/QueueConcepts.h
+        src/disseminator/UdpDisseminator.h
+        src/feedhandler/UdpFeedHandler.h
+        src/utils/config.h
 )
 
 target_link_libraries(main_simulate
@@ -37,25 +43,24 @@ target_link_libraries(main_simulate
 enable_testing()
 
 add_executable(generator_tests
-        tests/test_sanity_basic.cpp
-        tests/test_RandomWalkGenerator.cpp
-        tests/test_waitable_queue.cpp
-        tests/test_ZmqDisseminator.cpp
-        tests/test_ZmqFeedhandler.cpp
         src/generator/RandomWalkGenerator.h
         src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
         src/utils/SpinSpscQueue.h
-        tests/test_integration_zmq_disseminator_feedhandler.cpp
         src/monitor/LatencyMonitor.h
         src/utils/CustomSpscQueue.h
         src/utils/QueueConcepts.h
         src/disseminator/UdpDisseminator.h
-        src/feedhandler/UdpFeedhandler.h
+        src/feedhandler/UdpFeedHandler.h
+        src/utils/config.h
+        tests/test_integration_zmq_disseminator_feedhandler.cpp
         tests/test_UdpDisseminator.cpp
         tests/test_UdpFeedHandler.cpp
-        tests/test_integration_udp.cpp
-        src/utils/config.h
+        tests/test_sanity_basic.cpp
+        tests/test_RandomWalkGenerator.cpp
+        tests/test_waitable_queue.cpp
+        tests/test_ZmqDisseminator.cpp
+        tests/test_ZmqFeedHandler.cpptests/test_integration_udp.cpp
 )
 
 target_link_libraries(generator_tests
