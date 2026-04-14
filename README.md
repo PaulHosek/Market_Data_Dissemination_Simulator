@@ -1,83 +1,131 @@
-# Market Data Dissemination Simulator
+# Market Data Dissemination Benchmark
 
-[![CMake CI](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml)
+This project implements a high-throughput, low-latency market data dissemination pipeline in C++23. It serves as a benchmarking framework to evaluate the performance of different Single-Producer Single-Consumer (SPSC) lock-free queue architectures, wait strategies, and network transport protocols under heavy load.
 
-A high-performance C++23 app to simulate low-latency market data feeds. For autodidactic purposes.
+---
 
-## Project Status: Ongoing
-* **Completed:** Data generator, lockfree queue, disseminator-generator integration, subscriber interface
-* **In Progress:** Linking subscriber interface and disseminator with UDP multicast and TCP for connection management.
-* **Next steps:** Integration tests for disseminator-subscriber interface, Performance Measurement
+## Part 1: Performance Analysis
 
-## Build Instructions
-### Prerequisites
-- CMake 3.31 or higher
-- MinGW-w64 (g++ with C++23 support)
-- vcpkg for managing dependencies
-- Libraries: ZeroMQ, Boost.Lockfree, spdlog, Google Test
+*(Note: Insert your analysis, observations, and generated plots in the subsections below.)*
 
-### Setup
-1. **Clone the repo**:
-   ```bash
-   git clone https://github.com/PaulHosek/Market_Data_Dissemination_Simulator.git
-   cd Market_Data_Dissemination_Simulator
-   ```
+### Lock-Free Queue: Custom vs. Boost
+Comparison of the internal `std::atomic` ring buffer against `boost::lockfree::spsc_queue`, evaluating median latency and tail behavior (p99) under a busy-spin wait strategy.
 
-2. **Install CMake**:
-    - Grab CMake from [cmake.org/download](https://cmake.org/download) (e.g., Windows installer).
-    - Add it to your PATH during install.
-    - Check it works:
-      ```bash
-      cmake --version
-      ```
+[Insert queue_benchmark_kde.png here]
 
-3. **Install MinGW**:
-    - Install MinGW-w64 via Chocolatey:
-      ```bash
-      choco install mingw -y
-      ```
-    - Or download from [sourceforge.net/projects/mingw-w64](https://sourceforge.net/projects/mingw-w64/).
-    - Ensure `g++` and `mingw32-make` are in your PATH:
-      ```bash
-      g++ --version
-      mingw32-make --version
-      ```
+### Cache Locality Impact
+Analysis of how compile-time queue capacity (128 to 65,536 elements) impacts CPU L1/L2 cache locality and overall pipeline latency.
 
-4. **Set up vcpkg**:
-    - Clone and bootstrap vcpkg:
-      ```bash
-      git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
-      cd C:\vcpkg
-      git checkout 2025.02.14
-      .\bootstrap-vcpkg.bat
-      cd ..
-      ```
+[Insert queue_size_comparison.png here]
 
-5. **Install dependencies**:
-    - Use vcpkg to get the libraries:
-      ```bash
-      C:\vcpkg\vcpkg install zeromq:x64-mingw-dynamic boost-lockfree:x64-mingw-dynamic spdlog:x64-mingw-dynamic gtest:x64-mingw-dynamic
-      ```
+### Network Protocol: UDP Multicast vs. ZeroMQ TCP
+Evaluation of network-layer overhead, comparing the latency distributions of raw UDP Multicast against ZeroMQ over TCP.
 
-6. **Build the project**:
-    - Configure with CMake:
-      ```bash
-      cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic -G "MinGW Makefiles"
-      ```
-    - Build:
-      ```bash
-      mingw32-make -C build
-      ```
+[Insert network_comparison_kde.png here]
 
-7. **Run tests**:
-    - Run the Google Test suite:
-      ```bash
-      cd build
-      ctest -C Release
-      ```
+### Maximum Throughput and Backpressure
+Throughput stress testing up to 3,000,000 messages per second to observe OS socket buffer overflow (packet loss) in UDP versus TCP window backpressure mechanisms in ZeroMQ.
 
-## Project Structure
-- `src/`: Main code (e.g., `main.cpp`).
-- `include/`: Header files.
-- `tests/`: Unit tests (`test_basic.cpp`).
-- `docs/`: Design docs.
+[Insert throughput_analysis.png here]
+
+---
+
+## Part 2: System Architecture and Usage
+
+### Architecture Overview
+
+The system models a standard exchange or proprietary trading feed architecture:
+1. **Generator:** Produces simulated Quote and Trade messages via a random walk model. Utilizes busy-wait interval timers to bypass OS sleep granularity limitations.
+2. **Lock-Free Queue:** Bridges the producer (generator) and consumer (disseminator) threads. Configurable with `Spin` (busy-wait) or `Waitable` (condition variable) strategies.
+3. **Disseminator:** Serializes messages and writes them to the network socket.
+4. **Feed Handler:** Ingests network data, applies symbol-based filtering, and captures nanosecond-precision receipt timestamps.
+5. **Latency Monitor:** A zero-allocation tracking component that aggregates internal software overhead (`queue_ns`) and network stack overhead (`network_ns`).
+
+### Project Structure
+
+```text
+├── python/                 # Analytical suite and plotting scripts
+│   ├── plot_latency.py     # Streamlit interactive dashboard
+│   ├── plot_queue.py       # Custom vs Boost KDE plot script
+│   ├── plot_sizes.py       # Queue size ECDF plot script
+│   └── plot_throughput.py  # Max throughput plot script
+├── src/
+│   ├── disseminator/       # Network publishers (UDP, ZMQ)
+│   ├── feedhandler/        # Network subscribers and filter logic
+│   ├── generator/          # Market data simulation
+│   ├── monitor/            # Latency telemetry collection
+│   ├── utils/              # SPSC queues, types, and configurations
+│   └── main.cpp            # Application entry point and CLI router
+├── tests/                  # GTest unit and integration tests
+└── CMakeLists.txt
+```
+
+### Requirements
+
+* Compiler supporting C++23 (GCC, Clang, or MSVC)
+* CMake 3.28 or higher
+* vcpkg (for C++ dependency management)
+* Python 3.8+ (for the analytical suite)
+
+**C++ Dependencies (managed via vcpkg):**
+* `boost-lockfree`
+* `spdlog`
+* `cppzmq`
+* `zeromq`
+* `cxxopts`
+* `gtest`
+
+### Building from Source
+
+The project relies on CMake and vcpkg. To build the executable and tests from the command line:
+
+```bash
+# Clone the repository and navigate to the project root
+mkdir build && cd build
+
+# Configure the project with vcpkg toolchain
+# Replace [path_to_vcpkg] with your actual vcpkg installation path
+cmake .. -DCMAKE_TOOLCHAIN_FILE=[path_to_vcpkg]/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
+
+# Build the project
+cmake --build . --config Release
+```
+
+### Running the C++ Benchmark
+
+The compiled binary `main_simulate` accepts command-line arguments to dictate the pipeline configuration. Queue sizes are resolved at compile-time via template dispatching to ensure zero runtime overhead in the hot path.
+
+```bash
+./main_simulate --queue spin --size 4096 --transport zmq --rate 100000 --duration 10 --symbols ../data/tickers_WIN32.txt --out ../data
+```
+
+**Available Options:**
+* `-q, --queue`: Wait strategy (`spin` or `waitable`)
+* `-u, --underlying`: Queue implementation (`custom` or `boost`)
+* `-s, --size`: Queue capacity (`128`, `512`, `1024`, `4096`, `16384`, `65536`)
+* `-t, --transport`: Network protocol (`udp` or `zmq`)
+* `-r, --rate`: Target message rate in messages per second
+* `-d, --duration`: Benchmark duration in seconds
+* `-f, --symbols`: Path to the subscription symbols list
+* `-o, --out`: Output directory for the resulting CSV files
+
+### Running the Analytical Suite
+
+The Python scripts process the CSV outputs generated by the C++ backend and render statistical distributions.
+
+```bash
+# Navigate to the python directory
+cd python
+
+# Install required packages
+pip install -r requirements.txt 
+# (or manually: pip install streamlit pandas plotly matplotlib seaborn)
+
+# 1. To run the interactive dashboard:
+streamlit run plot_latency.py
+
+# 2. To generate static publication plots:
+python3 plot_queue.py
+python3 plot_sizes.py
+python3 plot_throughput.py
+```
