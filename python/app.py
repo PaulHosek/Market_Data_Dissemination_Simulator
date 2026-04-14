@@ -5,7 +5,7 @@ import os
 import plotly.express as px
 
 # --- Configuration ---
-EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
+EXECUTABLE_PATH = "../cmake-build-release/main_simulate"
 DATA_DIR = "../data"
 SYMBOLS_FILE = "../data/tickers.txt"
 

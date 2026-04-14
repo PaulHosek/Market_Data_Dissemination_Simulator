@@ -1,11 +1,18 @@
 import os
+import platform
 import subprocess
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
 
-EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
+
+if platform.system() == "Windows":
+    EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
+else:
+    EXECUTABLE_PATH = "../cmake-build-release/main_simulate"
+
+
 DATA_DIR = "../data"
 SYMBOLS_FILE = "../data/tickers.txt"
 

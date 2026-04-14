@@ -5,9 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.offsetbox import AnchoredText
+import platform
 
-# --- Configuration ---
-EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
+if platform.system() == "Windows":
+    EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
+else:
+    EXECUTABLE_PATH = "../cmake-build-release/main_simulate"
+
 DATA_DIR = "../data"
 SYMBOLS_FILE = "../data/tickers.txt"
 
