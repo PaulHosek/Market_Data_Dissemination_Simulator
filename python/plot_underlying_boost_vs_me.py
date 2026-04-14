@@ -9,7 +9,7 @@ from matplotlib.offsetbox import AnchoredText
 # --- Configuration ---
 EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
 DATA_DIR = "../data"
-SYMBOLS_FILE = "../data/tickers_WIN32.txt"
+SYMBOLS_FILE = "../data/tickers.txt"
 
 def run_benchmark(underlying_queue: str, rate: int = 100000, duration: int = 10) -> pd.DataFrame:
     print(f"Executing C++ Benchmark for: {underlying_queue.upper()} Queue...")

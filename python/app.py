@@ -7,7 +7,7 @@ import plotly.express as px
 # --- Configuration ---
 EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
 DATA_DIR = "../data"
-SYMBOLS_FILE = "../data/tickers_WIN32.txt"
+SYMBOLS_FILE = "../data/tickers.txt"
 
 st.set_page_config(page_title="Benchmark", layout="wide")
 st.set_page_config(page_title="Benchmark", layout="wide")

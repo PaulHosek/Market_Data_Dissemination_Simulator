@@ -96,7 +96,7 @@ cmake --build . --config Release
 The compiled binary `main_simulate` accepts command-line arguments to dictate the pipeline configuration. Queue sizes are resolved at compile-time via template dispatching to ensure zero runtime overhead in the hot path.
 
 ```bash
-./main_simulate --queue spin --size 4096 --transport zmq --rate 100000 --duration 10 --symbols ../data/tickers_WIN32.txt --out ../data
+./main_simulate --queue spin --size 4096 --transport zmq --rate 100000 --duration 10 --symbols ../data/tickers.txt --out ../data
 ```
 
 **Available Options:**

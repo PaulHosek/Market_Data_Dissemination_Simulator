@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 
 EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
 DATA_DIR = "../data"
-SYMBOLS_FILE = "../data/tickers_WIN32.txt"
+SYMBOLS_FILE = "../data/tickers.txt"
 
 TARGET_RATES = [100_000, 500_000, 1_000_000, 1_500_000, 2_000_000, 2_500_000, 3_000_000]
 DURATION = 5

@@ -8,7 +8,7 @@ from matplotlib.offsetbox import AnchoredText
 # --- Configuration ---
 EXECUTABLE_PATH = "../cmake-build-release-wsl/main_simulate"
 DATA_DIR = "../data"
-SYMBOLS_FILE = "../data/tickers_WIN32.txt"
+SYMBOLS_FILE = "../data/tickers.txt"
 
 def run_benchmark(transport: str, rate: int = 50000, duration: int = 20) -> pd.DataFrame:
     print(f"Executing Benchmark for Transport: {transport.upper()}...")
