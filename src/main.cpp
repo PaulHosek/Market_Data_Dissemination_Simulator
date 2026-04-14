@@ -12,7 +12,7 @@
 #include "./disseminator/ZmqDisseminator.h"
 #include "./generator/RandomWalkGenerator.h"
 #include "./monitor/LatencyMonitor.h"
-#include "./feedhandler/UdpFeedhandler.h"
+#include "./feedhandler/UdpFeedHandler.h"
 #include "./feedhandler/ZmqFeedHandler.h"
 
 template <typename MarketDataQueue, typename DisseminatorType, typename FeedHandlerType>
