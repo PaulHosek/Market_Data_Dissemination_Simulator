@@ -31,8 +31,9 @@ Evaluation of network-layer overhead, comparing the latency distributions of raw
 
 ### Maximum Throughput and Backpressure
 Throughput stress testing up to 3,000,000 messages per second to observe OS socket buffer overflow (packet loss) in UDP versus TCP window backpressure mechanisms in ZeroMQ.
-
 Note: As you can see there is still some work to be done here in investigating what causes the large proportion of packet drops.
+
+
 <img src="./plots/throughput_analysis.png" width="800">
 ---
 
