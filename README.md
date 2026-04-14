@@ -11,6 +11,10 @@ Try out the streamlit app:
 ```bash
 streamlit run app.py
 ```
+<div align="center">
+  <img src="./plots/high_quality_demo.gif" width="800" style="border: 1px solid #eee">
+</div>
+
 ### End-to-end latency
 
 <img src="./plots/quotes_latency_breakdown_kde.png" width="800">
