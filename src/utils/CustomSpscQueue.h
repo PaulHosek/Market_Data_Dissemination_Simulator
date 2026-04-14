@@ -65,8 +65,8 @@ public:
     }
 
 private:
-    alignas(std::hardware_constructive_interference_size) std::atomic<std::size_t> read_{0};
-    alignas(std::hardware_constructive_interference_size) std::atomic<std::size_t> write_{0};
+    alignas(std::hardware_destructive_interference_size) std::atomic<std::size_t> read_{0};
+    alignas(std::hardware_destructive_interference_size) std::atomic<std::size_t> write_{0};
     T* data_;
 };
 
