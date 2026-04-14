@@ -7,27 +7,24 @@ This project implements a high-throughput, low-latency market data dissemination
 ## Part 1: Performance Analysis
 
 *(Note: Insert your analysis, observations, and generated plots in the subsections below.)*
+### End-to-end latency
+
+<img src="./plots/quotes_latency_breakdown_kde.png" width="800">
 
 ### Lock-Free Queue: Custom vs. Boost
 Comparison of the internal `std::atomic` ring buffer against `boost::lockfree::spsc_queue`, evaluating median latency and tail behavior (p99) under a busy-spin wait strategy.
 
-[Insert queue_benchmark_kde.png here]
-
-### Cache Locality Impact
-Analysis of how compile-time queue capacity (128 to 65,536 elements) impacts CPU L1/L2 cache locality and overall pipeline latency.
-
-[Insert queue_size_comparison.png here]
+<img src="./plots/queue_benchmark_kde.png" width="800">
 
 ### Network Protocol: UDP Multicast vs. ZeroMQ TCP
 Evaluation of network-layer overhead, comparing the latency distributions of raw UDP Multicast against ZeroMQ over TCP.
 
-[Insert network_comparison_kde.png here]
+<img src="./plots/network_comparison_kde.png" width="800">
 
 ### Maximum Throughput and Backpressure
 Throughput stress testing up to 3,000,000 messages per second to observe OS socket buffer overflow (packet loss) in UDP versus TCP window backpressure mechanisms in ZeroMQ.
 
-[Insert throughput_analysis.png here]
-
+<img src="./plots/throughput_analysis.png" width="800">
 ---
 
 ## Part 2: System Architecture and Usage

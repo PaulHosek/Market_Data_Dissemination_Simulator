@@ -80,9 +80,22 @@ def main():
 
     sns.move_legend(ax, "upper left", bbox_to_anchor=(1.02, 1), title="Implementation", frameon=False)
 
-    p999 = df_all['queue_us'].quantile(0.99)
+    p99 = df_all['queue_us'].quantile(0.99)
     min_val = df_all['queue_us'].min() * 0.8
-    ax.set_xlim(min_val, p999 * 1.5)
+    x_max = p99 * 1.5
+    ax.set_xlim(min_val, x_max)
+
+    max_y = 0
+    for line in ax.lines:
+        x_data = line.get_xdata()
+        y_data = line.get_ydata()
+
+        mask = (x_data >= min_val) & (x_data <= x_max)
+        if mask.any():
+            max_y = max(max_y, y_data[mask].max())
+
+    if max_y > 0:
+        ax.set_ylim(0, max_y * 1.2)
 
     ax.set_title("Lock-Free Queue Internal Latency: Custom vs Boost (Zoomed to 99th %)", pad=20, fontweight='bold')
     ax.set_xlabel("Queue Latency (Microseconds) - Log Scale", fontweight='bold')

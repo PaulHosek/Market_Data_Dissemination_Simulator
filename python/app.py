@@ -4,14 +4,12 @@ import subprocess
 import os
 import plotly.express as px
 
-# --- Configuration ---
 EXECUTABLE_PATH = "../cmake-build-release/main_simulate"
 DATA_DIR = "../data"
 SYMBOLS_FILE = "../data/tickers.txt"
 
 st.set_page_config(page_title="Benchmark", layout="wide")
 st.set_page_config(page_title="Benchmark", layout="wide")
-# --- Session State Initialization ---
 if 'run_history' not in st.session_state:
     st.session_state.run_history = pd.DataFrame(columns=[
         "Run ID", "Transport", "Queue", "Size", "Rate", "Duration",
@@ -21,11 +19,9 @@ if 'run_history' not in st.session_state:
 if 'raw_data_history' not in st.session_state:
     st.session_state.raw_data_history = {}
 
-# --- Execution Helper Function ---
 def execute_benchmark(t_proto, q_strat, q_size, m_rate, m_dur):
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    # Unique ID generation
     base_run_id = f"{t_proto.upper()}_{q_strat.capitalize()}_{q_size}_{m_rate//1000}k"
     run_id = base_run_id
     counter = 1
@@ -98,11 +94,9 @@ def execute_benchmark(t_proto, q_strat, q_size, m_rate, m_dur):
         else:
             st.warning(f"Execution succeeded for {run_id}, but output data is empty.")
 
-# --- Header ---
 st.title("Disseminator Benchmark")
 st.markdown("Analyze and compare the latency profiles of lock-free queue wait strategies and network transports.")
 
-# --- Sidebar: Control Panel ---
 with st.sidebar:
     st.header("1. Configuration")
 
@@ -130,7 +124,6 @@ with st.sidebar:
         st.session_state.raw_data_history = {}
         st.rerun()
 
-# --- Handle Button Clicks ---
 if run_single:
     execute_benchmark(transport, queue_type, queue_size, rate, duration)
 
@@ -140,7 +133,6 @@ if run_all:
             execute_benchmark(t, q, queue_size, rate, duration)
     st.success("All 4 combinations executed successfully!")
 
-# --- Data Visualization ---
 tab1, tab2 = st.tabs(["Comparative Analysis (All Runs)", "Detailed Breakdown (Specific Run)"])
 
 with tab1:
@@ -180,7 +172,6 @@ with tab1:
 
 with tab2:
     if st.session_state.raw_data_history:
-        # Give the user a dropdown to select which historical run to view
         available_runs = list(st.session_state.raw_data_history.keys())
         selected_run = st.selectbox("Select a Run to Inspect", available_runs, index=len(available_runs)-1)
 
