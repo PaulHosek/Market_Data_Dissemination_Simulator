@@ -20,6 +20,7 @@ include_directories(src)
 
 # --- Main Executable ---
 add_executable(main_simulate
+        src/main.cpp
         src/generator/RandomWalkGenerator.h
         src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
@@ -42,7 +43,7 @@ target_link_libraries(main_simulate
 # --- Tests ---
 enable_testing()
 
-add_executable(generator_tests
+add_executable(tests
         src/generator/RandomWalkGenerator.h
         src/feedhandler/ZmqFeedHandler.h
         src/disseminator/ZmqDisseminator.h
@@ -60,10 +61,10 @@ add_executable(generator_tests
         tests/test_RandomWalkGenerator.cpp
         tests/test_waitable_queue.cpp
         tests/test_ZmqDisseminator.cpp
-        tests/test_ZmqFeedHandler.cpptests/test_integration_udp.cpp
+        tests/test_integration_udp.cpp
 )
 
-target_link_libraries(generator_tests
+target_link_libraries(tests
         PRIVATE GTest::gtest_main
         PRIVATE Boost::lockfree
         PRIVATE spdlog::spdlog
@@ -71,7 +72,7 @@ target_link_libraries(generator_tests
         PRIVATE cxxopts::cxxopts
 )
 
-gtest_discover_tests(generator_tests)
+gtest_discover_tests(tests)
 
 set_source_files_properties(
         src/generator/BaseGenerator.h
