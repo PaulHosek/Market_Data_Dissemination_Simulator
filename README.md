@@ -18,6 +18,7 @@ streamlit run app.py
   <img src="./plots/high_quality_demo.gif" width="800" style="border: 1px solid #eee">
 </div>
 
+Note: All analysis done on a WSL2 instance on my Ryzen 7 9800x3d. 
 ### End-to-end latency
 
 <img src="./plots/quotes_latency_breakdown_kde.png" width="800">
