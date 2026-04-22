@@ -1,9 +1,9 @@
-# Market Data Dissemination Benchmark
+# Market Data Dissemination
 
 [![CMake CI](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/PaulHosek/Market_Data_Dissemination_Simulator/actions/workflows/ci.yml)
 
 
-This project implements a high-throughput, low-latency market data dissemination pipeline in C++23. It serves as a benchmarking framework to evaluate the performance of different Single-Producer Single-Consumer (SPSC) lock-free queue architectures, wait strategies, and network transport protocols under heavy load.
+This project implements a high-throughput, low-latency market data dissemination pipeline in C++23. I also added a benchmarking framework to evaluate the performance of different Single-Producer Single-Consumer (SPSC) lock-free queue architectures, wait strategies, and network transport protocols under heavy load.
 
 ---
 
